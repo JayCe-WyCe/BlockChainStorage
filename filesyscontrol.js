@@ -8,6 +8,7 @@ const fs = require('fs');
 
 const filename_metatree = "metatree.json";
 
+// function to load the metadata file keeping track of the filesystem
 function load_tree(){
 	var metatreejson = fs.readFileSync(filename_metatree)
 	var metatree = JSON.parse(metatreejson);
@@ -32,6 +33,60 @@ function create_file_entry(id, filename, diskpath){
 	}
 }
 
+// function to check if a user exists, returns the user if found
+function get_user_by_id(id, metatree){
+	var user = null;
+	var users_total = metatree.length;
+	for(let i=0; i<users_total; i++){
+		if(metatree[i]["id"]===id){
+			user = metatree[i];
+			break;
+		}
+	}
+
+	return user;
+}
+
+// check if a user exists in the metadata file
+function check_user_exists(id, metatree){
+	var targ_user = get_user_by_id(id, metatree);
+	var user_exists = true;
+	if(targ_user==null){
+		user_exists = false;
+	}
+	return user_exists;
+}
+
+// function to create a brand new user in the system
+function create_user_entry(user){
+	var metatree = load_tree();
+	var user_id = user["id"];
+	var user_pub_v = user["pubkey_v"];
+	var user_pub_r = user["pubkey_r"];
+	var user_pub_s = user["pubkey_s"];
+
+	// check that the user exists in the system
+	var existing = check_user_exists(user_id, metatree);
+	if(!existing){
+		// add a new user if it does not already exist
+		try {
+			var user_new = {"id":user_id,
+							"files": []};
+			metatree.push(user_new);
+			fs.writeFileSync(filename_metatree, JSON.stringify(metatree));
+		} catch (err) {
+			// insertion failed, so treat it as failed
+			console.log(`Failed to write to ${filename_metatree}. Error: {err}`);
+			existing = false;
+		}
+	}
+
+	return existing;
+
+}
+
+/*
+// rewrite this, may deprecate and make use of check_user_exists()
 function create_user_entry(id){
 	// create the basic user
 	var metatree = load_tree();
@@ -39,6 +94,7 @@ function create_user_entry(id){
 	metatree.push(user);
 	fs.writeFileSync(filename_metatree, JSON.stringify(metatree));
 }
+*/
 
 // export all the necessary functions.
 module.exports = {"create_user_entry":create_user_entry,

@@ -9,48 +9,11 @@ const filesyscontrol = require("./filesyscontrol");
 const filename_accounts = "accounts.json";
 const filename_disklist = "disklist.json"; 
 
+
 /*Function: add a new user to the user json*/
 function insert_user(user){
-	const filename_accounts = "accounts.json";
-	var insertability = false;
-
-	// only insert a user if the file exists
-	if(fs.existsSync(filename_accounts)){
-		// read in the javascript file
-		var account_file = fs.readFileSync(filename_accounts)
-		var accounts = JSON.parse(account_file);
-		var accounts_total = accounts.length;
-		
-		// check every every user in the array
-		for(let i=0; i<accounts_total; i++){
-			if(accounts[i]["id"]==user["id"] && accounts[i]["pubkey"]==user["pubkey"]){
-				insertability = true;
-				break;
-			}
-		}
-
-		console.log(`insert_user: value of insertability is ${insertability}\n`);
-
-		// add the user to the list of accounts as a new user
-		if(!insertability){
-			console.log("key does not exist, therefore we need to add it");
-			try{
-				accounts.push(user);
-				fs.writeFileSync(filename_accounts, JSON.stringify(accounts));
-				filesyscontrol.create_user_entry(user["id"]);
-			} catch (err) {
-				// metatree and accounts may be out of sync, if we want to be thorough
-				// we should have handling code to reset both files (in a real world scenario)
-				console.log(`Failed to add user due to ${err.message}`);
-				insertability = false;
-			}
-		}
-
-		console.log(`insert_user: state of accounts is ${JSON.stringify(accounts)}`);
-
-	}
-	
-	return insertability;
+	var successful_insert = filesyscontrol.create_user_entry(user);
+	return successful_insert;
 }
 
 // note: we need to modify to include file ID. also edit filesyscontrol.create_file_entry()
@@ -82,6 +45,7 @@ function manage_upload(filedata){
 	return diskpath;
 }
 
+/*
 function authenticate(id, signature){
 	var authenticated = true;
 	try {
@@ -98,11 +62,12 @@ function authenticate(id, signature){
 			}
 		}
 
+*/
 		/* TODO: code below this section to interact with blockchain for authentication */
 		// deal with merkle trees
 		// do not forget to false the authenticated variable if fail
 		// it may be cleaner to offload the code to another script for abstraction
-
+/*
 	} catch (err) {
 		console.log(err);
 		authenticated = false;
@@ -110,6 +75,12 @@ function authenticate(id, signature){
 
 	return authenticated;
 }
+*/
+
+function authenticate(){
+	return true;
+}
+
 
 
 // export all the functions.

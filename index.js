@@ -14,6 +14,7 @@ const process = require("./process")
 // The app variable will be responsible for all API-related calls.
 const app = express();
 app.use(express.json());
+const upload = multer({dest: 'storage/'});
 
 const server_port = 3000;
 
@@ -25,16 +26,24 @@ function server_start(){
 
 
 function add_user(req, res){
+	// we will expect the following keys:
+	// id: a signed hash of the ethereum address
+	// v, r, s: public key
 	console.log("Testing add_user function API call");
 	var id = req.body["id"];
-	var pubkey = req.body["pubkey"];
-	var account = {"id":id, "pubkey":pubkey};
+	var id_hash = req.body["id_hash"];
+	var pubkey_v = req.body["pubkey_v"];
+	var pubkey_r = req.body["pubkey_r"];
+	var pubkey_s = req.body["pubkey_s"];
 
-	console.log(`The values extracted from request: ${id} and ${pubkey}`);
+	// create the new user account extracted from the request
+	var identifier = {"id_hash":id_hash, "v":pubkey_v, "r":pubkey_r, "s":pubkey_s };
 
-	var did_it_insert = process.insert_user(account);
+	console.log(`The values from request: ${id} and ${pubkey_v}, ${pubkey_r}, ${pubkey_s}`);
 
-	res.send(did_it_insert);
+	var successful_insert = process.insert_user(id, identifier);
+
+	res.send(successful_insert);
 }
 
 /*
@@ -55,6 +64,7 @@ function save_file(req, res){
 }
 */
 
+/*
 function upload_file(req, res){
 	// we assume upload will perform an overwrite. separate function for update file.
 	console.log("\n\nEXPOSE ALL YOUR SECRETS TO ME\n");
@@ -81,8 +91,19 @@ function upload_file(req, res){
 	res.send(diskpath);
 
 }
+*/
+
+function upload_file(req, res){
+	console.log(`There is a lot of debugging to be done.`);
+	var id = req.body["id"];
+	var filename = req.body["filename"];
+	console.log(`The file is {req.file}`);
+	//var contents = req.file.buffer;
+	console.log(`${id}, ${filename}`);
+
+}
 
 // Code to get the server running
 app.post("/add_user", add_user);
-app.post("/upload_file", upload_file);
+app.post("/upload_file", upload.single('filecontent'), upload_file);
 app.listen(server_port, server_start);

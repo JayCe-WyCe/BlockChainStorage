@@ -5,11 +5,6 @@
 import json
 import os
 
-# create accounts json for holding id and public key
-accounts = open("accounts.json", "w")
-json.dump([], accounts)
-accounts.close()
-
 # create the json for managing files and permissions, directory system 
 manager = open("metatree.json", "w")
 json.dump([], manager)
