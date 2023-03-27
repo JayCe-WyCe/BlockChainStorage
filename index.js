@@ -71,7 +71,7 @@ function upload_file(req, res, next){
 		console.log(`The authentication is valid, we can now store the contents: ${filecontent}`);
 		try {
 			console.log(`This is a test to save a file... replace this with more complex code!`);
-			process.upload_internal(filename, filecontent);	
+			process.upload_internal(id, filename, filecontent);	
 		} catch (err) {
 			console.log(`This is just a test to save the file! Why did it fail!? ${err}`);
 		}
