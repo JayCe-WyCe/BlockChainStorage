@@ -27,5 +27,14 @@ with open(fname, "w") as file:
 file = open(fname, "r")
 # testing purposes allows this, but user_hash is wrong in reality
 upload_file(user_id, fname, user_hash, pbkey_v, pbkey_r, pbkey_s, file)
+file.close()
+
+# test number 3: modify the file and save it again
+with open(fname, "a") as file:
+    val = "\nGoodbye World!"
+    file.write(val)
+file = open(fname, "r")
+upload_file(user_id, fname, user_hash, pbkey_v, pbkey_r, pbkey_s, file)
+file.close()
 
 

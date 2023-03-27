@@ -37,17 +37,28 @@ function authenticate(id, identifier){
 }
 
 // function to deal with 1. updating metadata, and 2. saving the actual file
-function upload_internal(id, filename, filecontent){
-	console.log(`upload_internal called with parameters id ${id}, filename ${filename}, filecontent ${filecontent}`);
-	var diskpath = manage_upload(id, filename);
-	fs.writeFileSync(diskpath+"/"+filename, filecontent);
+function manage_upload(id, filename, filecontent){
+	console.log(`manage_upload called with parameters id ${id}, filename ${filename}, filecontent ${filecontent}`);
+	var existing_file = filesyscontrol.check_file_existence(id, filename);
+	if(existing_file===null){
+		// the file is new and so a new record needs to be inserted
+		console.log(`The file does not already exist, so we have to upload it as a new file!`);
+		var diskpath = upload_new(id, filename);
+		fs.writeFileSync(diskpath+"/"+filename, filecontent);
+	} else {
+		// the file is already in the system, so only need to save the file
+		// existing_file is a file metadata object, which contains filename, diskpath, and collaborators etc.
+		console.log(`The file is not new, so we just need to save it again with no changes to metadata`);
+		var diskpath = existing_file["diskpath"];
+		fs.writeFileSync(diskpath+"/"+filename, filecontent);
+	}
 }
 
 // note: we need to modify to include file ID. also edit filesyscontrol.create_file_entry()
-function manage_upload(id, filename){
+function upload_new(id, filename){
 	// we now wish to store the file, we assume we are already authenticated.
 	// two parts: first, generate disk. second, add the file to metatree.
-	console.log(`manage_upload called, checking to update metadata...`);
+	console.log(`upload_new called, checking to update metadata...`);
 	var diskpath = "";
 	if(fs.existsSync(filename_disklist)){
 		// we get a list of disks available to us specified in disklist
@@ -74,8 +85,7 @@ function manage_upload(id, filename){
 	return diskpath;
 }
 
-
 // export all the functions.
 module.exports = {"insert_user":insert_user,
 				  "authenticate":authenticate,
-				  "upload_internal":upload_internal};
+				  "manage_upload":manage_upload};

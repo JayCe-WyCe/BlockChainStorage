@@ -36,6 +36,26 @@ function create_file_entry(id, filename, diskpath){
 
 }
 
+// function to check if a file already exists in the system
+function check_file_existence(id, filename){
+	console.log(`Inside check_file_existence to see if a filename already exists with a user`);
+	var metatree = load_tree();
+	var user_index = get_user_by_id(id, metatree);
+	console.log(`The user index is ${user_index}`);
+	var user = metatree[user_index];
+	var user_files = user["files"];
+	var file_count = user_files.length;
+	var target_file = null;
+	for(let i=0; i<file_count; i++){
+		if(filename===user_files[i]["filename"]){
+			console.log(`Found the file! The filename is ${filename}`);
+			target_file = user_files[i];
+			break
+		}
+	}
+	return target_file;
+}
+
 // function to check if a user exists, returns the index of the user in the metatree if found
 function get_user_by_id(id, metatree){
 	var user = -1;
@@ -89,4 +109,5 @@ function create_user_entry(user_id){
 
 // export all the necessary functions.
 module.exports = {"create_user_entry":create_user_entry,
-				  "create_file_entry":create_file_entry};
+				  "create_file_entry":create_file_entry,
+				  "check_file_existence":check_file_existence};
