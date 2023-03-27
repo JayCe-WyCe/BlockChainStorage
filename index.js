@@ -7,13 +7,14 @@
 */
 
 const express = require("express")
+const body_parser = require('body-parser');
 const multer = require("multer");
 const util = require("util");
 const process = require("./process")
 
 // The app variable will be responsible for all API-related calls.
 const app = express();
-app.use(express.json());
+app.use(body_parser.json());
 const upload = multer({dest: 'storage/'});
 
 const server_port = 3000;
@@ -38,72 +39,57 @@ function add_user(req, res){
 
 	// create the new user account extracted from the request
 	var identifier = {"id_hash":id_hash, "v":pubkey_v, "r":pubkey_r, "s":pubkey_s };
+	console.log(`add_user function called. looking at values from the request:`);
+	console.log(`The values from request: ${id} ${id_hash} and ${pubkey_v}, ${pubkey_r}, ${pubkey_s}`);
 
-	console.log(`The values from request: ${id} and ${pubkey_v}, ${pubkey_r}, ${pubkey_s}`);
-
-	var successful_insert = process.insert_user(id, identifier);
-
+	var authenticate_valid = process.authenticate(id, identifier);
+	var successful_insert = false;
+	if(authenticate_valid){
+		successful_insert = process.insert_user(id);
+	}
 	res.send(successful_insert);
 }
 
-/*
-function save_file(req, res){
-	var token = req.body["token"];
-	var message = req.body["message"];
-	console.log(`The token you sent me is ${token}`);
-	if(process.check_token(token)){
-		console.log("Yes, token passed");
-		var metadata = {"destination":"./uploads/",
-						"filename":"testfilename"
-												};
-		var disk = multer.diskStorage(metadata);
-		var upload = multer({"storage":disk});
-		upload.single("what is supposed to go here idk");
-	}
-	res.send("Good work!");
-}
-*/
+function upload_file(req, res, next){
+	console.log(`\nUpload file API is called.\n`);
+	var id = req.body["metadata"]["id"];
+	var filename = req.body["metadata"]["filename"];
+	var filehash = req.body["metadata"]["filehash"];
+	var pubkey_v = req.body["metadata"]["pubkey_v"];
+	var pubkey_r = req.body["metadata"]["pubkey_r"];
+	var pubkey_s = req.body["metadata"]["pubkey_s"];
 
-/*
-function upload_file(req, res){
-	// we assume upload will perform an overwrite. separate function for update file.
-	console.log("\n\nEXPOSE ALL YOUR SECRETS TO ME\n");
-	console.log(util.inspect(req.body, {depth: null}));
-	var id = req.body["id"];
-	var signature = req.body["signature"];
-	var filename = req.body["filename"];
-	var filedata = req.body["filedata"];
-	var metafile = {"id":id, "filename":filename};
+	var filecontent = req.body["filecontent"];
 
-	var diskpath = "";
-	console.log(`The signature sent is ${signature} for id ${id}`);
-	if(process.authenticate(id, signature)){
-		console.log("The signature has been verified to be authentic.");
-		diskpath = process.manage_upload(metafile);
-		var metadata = {"destination":diskpath,
-						"filename":filename};
-		var storage = multer.diskStorage(metadata);
-		var upload = multer({"storage":storage});
-		upload.single("filedata");
 
-	}
-
-	res.send(diskpath);
-
-}
-*/
-
-function upload_file(req, res){
-	console.log(`There is a lot of debugging to be done.`);
-	var id = req.body["id"];
-	var filename = req.body["filename"];
-	console.log(`The file is {req.file}`);
+	// the user signs the file, and so we check that the user actually owns the file
+	var identifier = {"filehash":filehash, "v":pubkey_v, "r":pubkey_r, "s":pubkey_s };
 	//var contents = req.file.buffer;
-	console.log(`${id}, ${filename}`);
+	console.log(`filename ${filename}, filehash ${filehash}, v ${pubkey_v}, r ${pubkey_r}, s ${pubkey_s}`);
+	var authenticate_valid = process.authenticate(id, identifier);
+	if(authenticate_valid){
+		console.log(`The authentication is valid, we can now store the contents: ${filecontent}`);
+		try {
+			console.log(`This is a test to save a file... replace this with more complex code!`);
+			process.upload_internal(filename, filecontent);	
+		} catch (err) {
+			console.log(`This is just a test to save the file! Why did it fail!? ${err}`);
+		}
+		res.send();
+	} else {
+		res.send(authenticate_valid);
+	}
 
 }
+
+function fin(req, res){
+	console.log(`Hi I am just here to give closure`);
+	res.send("OK!");
+}
+
+
 
 // Code to get the server running
 app.post("/add_user", add_user);
-app.post("/upload_file", upload.single('filecontent'), upload_file);
+app.post("/upload_file", upload_file);
 app.listen(server_port, server_start);

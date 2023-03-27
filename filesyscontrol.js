@@ -60,13 +60,11 @@ function check_user_exists(id, metatree){
 // function to create a brand new user in the system
 function create_user_entry(user){
 	var metatree = load_tree();
-	var user_id = user["id"];
-	var user_pub_v = user["pubkey_v"];
-	var user_pub_r = user["pubkey_r"];
-	var user_pub_s = user["pubkey_s"];
+	var user_id = user;
 
 	// check that the user exists in the system
 	var existing = check_user_exists(user_id, metatree);
+	var created = true;
 	if(!existing){
 		// add a new user if it does not already exist
 		try {
@@ -76,25 +74,14 @@ function create_user_entry(user){
 			fs.writeFileSync(filename_metatree, JSON.stringify(metatree));
 		} catch (err) {
 			// insertion failed, so treat it as failed
-			console.log(`Failed to write to ${filename_metatree}. Error: {err}`);
-			existing = false;
+			console.log(`Failed to write to ${filename_metatree}. Error: ${err}`);
+			created = false;
 		}
 	}
 
-	return existing;
+	return created;
 
 }
-
-/*
-// rewrite this, may deprecate and make use of check_user_exists()
-function create_user_entry(id){
-	// create the basic user
-	var metatree = load_tree();
-	var user = {"id":id, "files":[]};
-	metatree.push(user);
-	fs.writeFileSync(filename_metatree, JSON.stringify(metatree));
-}
-*/
 
 // export all the necessary functions.
 module.exports = {"create_user_entry":create_user_entry,

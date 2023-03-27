@@ -11,9 +11,35 @@ const filename_disklist = "disklist.json";
 
 
 /*Function: add a new user to the user json*/
-function insert_user(user){
-	var successful_insert = filesyscontrol.create_user_entry(user);
+function insert_user(id, identifier){
+	var successful_insert = false;
+	successful_insert = filesyscontrol.create_user_entry(id);
+	
 	return successful_insert;
+}
+
+// daniel-external_function is a dummy function, delete it after replacing with the real one
+// this one is just set to always return true
+function daniel_external_function(id){
+	return id;
+}
+
+function authenticate(id, identifier){
+	// note: identifier takes the form of key-values for {id-hash, v, r, s}.
+	// we call daniel's function to verify that the user is indeed who they claim to be
+	var authenticated = false;
+	var ret_id = daniel_external_function(id);
+	// check if the user owns this account
+	console.log(`Attempting authentication... ${id} === ${ret_id} ? ${id===ret_id}`);
+	if(id===ret_id){
+		authenticated = true;
+	}
+
+	return authenticated;
+}
+
+function upload_internal(filename, filecontent){
+	fs.writeFileSync("./storage/"+filename, filecontent);
 }
 
 // note: we need to modify to include file ID. also edit filesyscontrol.create_file_entry()
@@ -45,45 +71,9 @@ function manage_upload(filedata){
 	return diskpath;
 }
 
-/*
-function authenticate(id, signature){
-	var authenticated = true;
-	try {
-		var account_file = fs.readFileSync(filename_accounts)
-		var accounts = JSON.parse(account_file);
-		var accounts_total = accounts.length;
-		var stored_pubkey;
-
-		console.log(`We are looking to authenticate ${id}`);
-		for(let i=0; i<accounts_total; i++){
-			if(accounts[i]["id"]==id){
-				stored_pubkey = accounts[i]["pubkey"];
-				console.log(`Retrieved the public key ${stored_pubkey}`);
-			}
-		}
-
-*/
-		/* TODO: code below this section to interact with blockchain for authentication */
-		// deal with merkle trees
-		// do not forget to false the authenticated variable if fail
-		// it may be cleaner to offload the code to another script for abstraction
-/*
-	} catch (err) {
-		console.log(err);
-		authenticated = false;
-	}
-
-	return authenticated;
-}
-*/
-
-function authenticate(){
-	return true;
-}
-
-
 
 // export all the functions.
 module.exports = {"insert_user":insert_user,
 				  "manage_upload":manage_upload,
-				  "authenticate":authenticate};
+				  "authenticate":authenticate,
+				  "upload_internal":upload_internal};
