@@ -4,11 +4,25 @@
 	away the code clutter. Note that this is simply for auxillary functions.
 */
 const fs = require('fs');
+const Web3 = require('web3');
 const filesyscontrol = require("./filesyscontrol");
 
 const filename_accounts = "accounts.json";
 const filename_disklist = "disklist.json"; 
 
+const providerAddr = "https://eth-sepolia.g.alchemy.com/v2/m5xr5zKeM3WLGQL2l_pbLYkWwIhdAXl-";
+const web3 = new Web3(providerAddr);
+let key_str = fs.readFileSync('fileImports/temp_key.txt', 'ascii').replace('\r', '')
+var keys = key_str.split('\n')
+var privKey = keys[0];
+var wallet = web3.eth.accounts.privateKeyToAccount(privKey);
+var ownerAddr = wallet.address;
+
+const fileAbiPath = "fileImports/filePermAbi.json";
+const fileAbi = JSON.parse(fs.readFileSync(fileAbiPath).toString());
+
+const contractAddr = "0x858b8D0C5C87c1b77a66B21e7aB54Fc51F5e16A6";
+const contractAPI = new web3.eth.Contract(fileAbi, contractAddr);
 
 /*Function: add a new user to the user json*/
 function insert_user(id, identifier){
@@ -22,16 +36,18 @@ function daniel_external_function(id){
 	return id;
 }
 
-function authenticate(id, identifier){
+async function authenticate(addr, signatureObj){
 	// note: identifier takes the form of key-values for {id-hash, v, r, s}.
 	// we call daniel's function to verify that the user is indeed who they claim to be
 	var authenticated = false;
-	var ret_id = daniel_external_function(id);
+	//var ret_id = daniel_external_function(id);
+	const ret_addr = await contractAPI.methods.VerifyMessage(signatureObj["messageHash"], signatureObj["v"], signatureObj["r"], signatureObj["s"]).call();
 	// check if the user owns this account
-	console.log(`Attempting authentication... ${id} === ${ret_id} ? ${id===ret_id}`);
-	if(id===ret_id){
+	console.log(`Attempting authentication... ${addr} === ${ret_addr} ? ${addr===ret_addr}`);
+	if(addr===ret_addr){
 		authenticated = true;
 	}
+	console.log(authenticated);
 
 	return authenticated;
 }
@@ -84,6 +100,9 @@ function upload_new(id, filename){
 	console.log(`After processing, the disk path is ${diskpath}`);
 	return diskpath;
 }
+
+var signedObj = web3.eth.accounts.sign("iori is best waifu!!", privKey);
+authenticate(ownerAddr, {"messageHash": signedObj["messageHash"], "v": signedObj["v"], "r": signedObj["r"], "s": signedObj["s"]});
 
 // export all the functions.
 module.exports = {"insert_user":insert_user,
