@@ -82,12 +82,6 @@ function upload_file(req, res, next){
 
 }
 
-function fin(req, res){
-	console.log(`Hi I am just here to give closure`);
-	res.send("OK!");
-}
-
-
 
 // Code to get the server running
 app.post("/add_user", add_user);

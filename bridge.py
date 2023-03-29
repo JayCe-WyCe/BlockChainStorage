@@ -13,7 +13,7 @@ def set_connection(ip, port):
     url_port = port
 
 def upload_file(user_id, filename, filehash,
-                pubkey_v, pubkey_r, pubkey_s, file):
+                sign_v, sign_r, sign_s, file):
     url = url_ip + url_port + "/upload_file"
     print(f"DEBUG: Trying to access the URL {url}")
     headers = {"Content-Type": "application/json"}
@@ -23,9 +23,9 @@ def upload_file(user_id, filename, filehash,
             "id": user_id,
             "filename": filename,
             "filehash": filehash,
-            "pubkey_v": pubkey_v,
-            "pubkey_r": pubkey_r,
-            "pubkey_s": pubkey_s
+            "sign_v": sign_v,
+            "sign_r": sign_r,
+            "sign_s": sign_s
         }
     }
     payload = json.dumps(data)
@@ -34,15 +34,15 @@ def upload_file(user_id, filename, filehash,
 
 
 
-def add_user(user_id, user_id_hash, pubkey_v, pubkey_r, pubkey_s):
+def add_user(user_id, user_id_hash, sign_v, sign_r, sign_s):
     # add a new user to the system
     url = url_ip + url_port + "/add_user"
     print(f"DEBUG: Trying to access the URL {url}")
     payload = {"id":user_id,
                "id_hash":user_id_hash,
-               "pubkey_v":pubkey_v,
-               "pubkey_r":pubkey_r,
-               "pubkey_s":pubkey_s}
+               "sign_v":sign_v,
+               "sign_r":sign_r,
+               "sign_s":sign_s}
     res = requests.post(url, json=payload)
 
     return res
