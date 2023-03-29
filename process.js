@@ -105,15 +105,7 @@ async function sendTx(privKey, unsignedTx) {
 }
 
 async function addUser(userAddr, merkleHash, signatureObj) {
-	const userAddr = userAddr;
-	const merkleHash = merkleHash;
 	const pendingTx = contractAPI.methods.addUser(userAddr, merkleHash, signatureObj);
-	const gasCost = await web3.eth.estimateGas({
-		"value": 0x0,
-		"data": pendingTx.encodeABI(),
-		"from": ownerAddr,
-		"to": contractAddr
-	});
 	const resultTx = await sendTx(privKey, pendingTx);
 	return resultTx;
 }
