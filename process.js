@@ -31,10 +31,7 @@ function insert_user(id, identifier){
 }
 
 async function authenticate(addr, signatureObj){
-	// note: identifier takes the form of key-values for {id-hash, v, r, s}.
-	// we call daniel's function to verify that the user is indeed who they claim to be
 	var authenticated = false;
-	//var ret_id = daniel_external_function(id);
 	const ret_addr = await contractAPI.methods.VerifyMessage(signatureObj["hashedMessage"], signatureObj["v"], signatureObj["r"], signatureObj["s"]).call();
 	// check if the user owns this account
 	console.log(`Attempting authentication... ${addr} === ${ret_addr} ? ${addr===ret_addr}`);
@@ -104,13 +101,12 @@ async function sendTx(privKey, unsignedTx) {
 			},
 			privKey
 		);
-	console.log(signedTx);
 	return await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 }
 
-async function addUser(signatureObj) {
-	const userAddr = ownerAddr;
-	const merkleHash = "0x51b9e270b8d6a9c2a39d2abd8975e6a4977cb64216551d0963fa5d69072ef08d";
+async function addUser(userAddr, merkleHash, signatureObj) {
+	const userAddr = userAddr;
+	const merkleHash = merkleHash;
 	const pendingTx = contractAPI.methods.addUser(userAddr, merkleHash, signatureObj);
 	const gasCost = await web3.eth.estimateGas({
 		"value": 0x0,
@@ -118,15 +114,9 @@ async function addUser(signatureObj) {
 		"from": ownerAddr,
 		"to": contractAddr
 	});
-	console.log(pendingTx);
-	console.log(gasCost);
 	const resultTx = await sendTx(privKey, pendingTx);
-	console.log(resultTx);
+	return resultTx;
 }
-
-var signedObj = web3.eth.accounts.sign("testing!!", privKey);
-authenticate(ownerAddr, {"hashedMessage": signedObj["messageHash"], "v": signedObj["v"], "r": signedObj["r"], "s": signedObj["s"]});
-addUser({"hashedMessage": signedObj["messageHash"], "v": signedObj["v"], "r": signedObj["r"], "s": signedObj["s"]})
 
 // export all the functions.
 module.exports = {"insert_user":insert_user,
