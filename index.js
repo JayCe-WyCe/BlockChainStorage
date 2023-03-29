@@ -33,14 +33,14 @@ function add_user(req, res){
 	console.log("Testing add_user function API call");
 	var id = req.body["id"];
 	var id_hash = req.body["id_hash"];
-	var pubkey_v = req.body["pubkey_v"];
-	var pubkey_r = req.body["pubkey_r"];
-	var pubkey_s = req.body["pubkey_s"];
+	var sign_v = req.body["sign_v"];
+	var sign_r = req.body["sign_r"];
+	var sign_s = req.body["sign_s"];
 
 	// create the new user account extracted from the request
-	var identifier = {"id_hash":id_hash, "v":pubkey_v, "r":pubkey_r, "s":pubkey_s };
+	var identifier = {"id_hash":id_hash, "v":sign_v, "r":sign_r, "s":sign_s };
 	console.log(`add_user function called. looking at values from the request:`);
-	console.log(`The values from request: ${id} ${id_hash} and ${pubkey_v}, ${pubkey_r}, ${pubkey_s}`);
+	console.log(`The values from request: ${id} ${id_hash} and ${sign_v}, ${sign_r}, ${sign_s}`);
 
 	var authenticate_valid = process.authenticate(id, identifier);
 	var successful_insert = false;
@@ -55,17 +55,17 @@ function upload_file(req, res, next){
 	var id = req.body["metadata"]["id"];
 	var filename = req.body["metadata"]["filename"];
 	var filehash = req.body["metadata"]["filehash"];
-	var pubkey_v = req.body["metadata"]["pubkey_v"];
-	var pubkey_r = req.body["metadata"]["pubkey_r"];
-	var pubkey_s = req.body["metadata"]["pubkey_s"];
+	var sign_v = req.body["metadata"]["sign_v"];
+	var sign_r = req.body["metadata"]["sign_r"];
+	var sign_s = req.body["metadata"]["sign_s"];
 
 	var filecontent = req.body["filecontent"];
 
 
 	// the user signs the file, and so we check that the user actually owns the file
-	var identifier = {"filehash":filehash, "v":pubkey_v, "r":pubkey_r, "s":pubkey_s };
+	var identifier = {"filehash":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
 	//var contents = req.file.buffer;
-	console.log(`filename ${filename}, filehash ${filehash}, v ${pubkey_v}, r ${pubkey_r}, s ${pubkey_s}`);
+	console.log(`filename ${filename}, filehash ${filehash}, v ${sign_v}, r ${sign_r}, s ${sign_s}`);
 	var authenticate_valid = process.authenticate(id, identifier);
 	if(authenticate_valid){
 		console.log(`The authentication is valid, we can now store the contents: ${filecontent}`);
