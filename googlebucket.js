@@ -4,7 +4,7 @@ const {Storage} = require('@google-cloud/storage');
 
 
 // Uploads a file to a bucket
-async function uploadFile(bucketName, fileName, fileData, bucket_provider) {
+async function gcuploadFile(bucketName, fileName, fileData, bucket_provider) {
 
   var storage = new Storage(bucket_provider);
 
@@ -36,7 +36,7 @@ async function uploadFile(bucketName, fileName, fileData, bucket_provider) {
 
 
 // Read the file from a bucket
-async function readFile(bucketName, fileName, bucket_provider) {
+async function gcreadFile(bucketName, fileName, bucket_provider) {
   var storage = new Storage(bucket_provider);
 
   const file = storage.bucket(bucketName).file(fileName);
@@ -50,7 +50,7 @@ async function readFile(bucketName, fileName, bucket_provider) {
 
 
 //Update a file in the bucket
-async function updateFile(bucketName, fileName, bucket_provider) {
+async function gcupdateFile(bucketName, fileName, bucket_provider) {
   var storage = new Storage(bucket_provider);
 
   const file = storage.bucket(bucketName).file(fileName);
@@ -65,7 +65,7 @@ async function updateFile(bucketName, fileName, bucket_provider) {
 
 
 //Delete a file from a bucket
-async function deleteFile(bucketName, fileName, bucket_provider) {
+async function gcdeleteFile(bucketName, fileName, bucket_provider) {
   var storage = new Storage(bucket_provider);
 
   await storage.bucket(bucketName).file(fileName).delete();
@@ -76,7 +76,7 @@ async function deleteFile(bucketName, fileName, bucket_provider) {
 }
 
 // Check if a bucket exists or not
-async function checkBucketStatus(bucketName, bucket_provider) {
+async function gccheckBucketStatus(bucketName, bucket_provider) {
   var storage = new Storage();
 
   const bucket = storage.bucket(bucketName);
