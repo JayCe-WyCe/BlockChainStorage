@@ -16,13 +16,14 @@ function load_tree(){
 }
 
 // function to add an entry into the metatree when a new file is being inserted
-function create_file_entry(id, filename, diskpath){
+function create_file_entry(id, filename, filenamehash, diskbucket){
 	// we may wish to create more args after discussion...
 	console.log(`Inside filesyscontrol, creating file entry using id ${id}, filename ${filename}, diskpath ${diskpath}`);
 	var metatree = load_tree();
 	var users_total = metatree.length;
 	var file_obj = {"filename": filename,
-					"diskpath": diskpath,
+					"filenamehash": filenamehash, 
+					"diskbucket": diskbucket,
 					"collaborators": []};
 	var user_index = get_user_by_id(id, metatree);
 	console.log(`The user index is ${user_index}`);
@@ -93,6 +94,7 @@ function create_user_entry(user_id){
 		try {
 			console.log(`Attempting to add a new user and pushing into the metatree...`);
 			var user_new = {"id":user_id,
+							"merkle":null,
 							"files": []};
 			metatree.push(user_new);
 			fs.writeFileSync(filename_metatree, JSON.stringify(metatree));

@@ -54,13 +54,12 @@ function upload_file(req, res, next){
 	console.log(`\nUpload file API is called.\n`);
 	var id = req.body["metadata"]["id"];
 	var filename = req.body["metadata"]["filename"];
-	var filehash = req.body["metadata"]["filehash"];
+	var filehash = req.body["metadata"]["filehash"]; // note currently set to hash of filename, not content
 	var sign_v = req.body["metadata"]["sign_v"];
 	var sign_r = req.body["metadata"]["sign_r"];
 	var sign_s = req.body["metadata"]["sign_s"];
 
 	var filecontent = req.body["filecontent"];
-
 
 	// the user signs the file, and so we check that the user actually owns the file
 	var identifier = {"filehash":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
@@ -71,7 +70,7 @@ function upload_file(req, res, next){
 		console.log(`The authentication is valid, we can now store the contents: ${filecontent}`);
 		try {
 			console.log(`This is a test to save a file... replace this with more complex code!`);
-			process.manage_upload(id, filename, filecontent);	
+			process.manage_upload(id, filename, filehash, filecontent);	
 		} catch (err) {
 			console.log(`This is just a test to save the file! Why did it fail!? ${err}`);
 		}

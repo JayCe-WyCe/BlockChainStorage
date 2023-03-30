@@ -8,7 +8,7 @@ const Web3 = require('web3');
 const filesyscontrol = require("./filesyscontrol");
 
 const filename_accounts = "accounts.json";
-const filename_disklist = "disklist.json"; 
+const filename_disklist = "bucketlist.json"; 
 
 const providerAddr = "https://eth-sepolia.g.alchemy.com/v2/m5xr5zKeM3WLGQL2l_pbLYkWwIhdAXl-";
 const web3 = new Web3(providerAddr);
@@ -44,52 +44,54 @@ async function authenticate(addr, signatureObj){
 }
 
 // function to deal with 1. updating metadata, and 2. saving the actual file
-function manage_upload(id, filename, filecontent){
+function manage_upload(id, filename, filenamehash, filecontent){
 	console.log(`manage_upload called with parameters id ${id}, filename ${filename}, filecontent ${filecontent}`);
 	var existing_file = filesyscontrol.check_file_existence(id, filename);
 	if(existing_file===null){
 		// the file is new and so a new record needs to be inserted
 		console.log(`The file does not already exist, so we have to upload it as a new file!`);
-		var diskpath = upload_new(id, filename);
-		fs.writeFileSync(diskpath+"/"+filename, filecontent);
+		var diskbucket = upload_new(id, filenamehash, filename);
+		//fs.writeFileSync(diskpath+"/"+filename, filecontent);
 	} else {
 		// the file is already in the system, so only need to save the file
 		// existing_file is a file metadata object, which contains filename, diskpath, and collaborators etc.
 		console.log(`The file is not new, so we just need to save it again with no changes to metadata`);
-		var diskpath = existing_file["diskpath"];
-		fs.writeFileSync(diskpath+"/"+filename, filecontent);
+		var diskbucket = existing_file["diskbucket"];
+		//fs.writeFileSync(diskpath+"/"+filename, filecontent);
 	}
 }
 
 // note: we need to modify to include file ID. also edit filesyscontrol.create_file_entry()
-function upload_new(id, filename){
+function upload_new(id, filename, filenamehash){
 	// we now wish to store the file, we assume we are already authenticated.
 	// two parts: first, generate disk. second, add the file to metatree.
 	console.log(`upload_new called, checking to update metadata...`);
-	var diskpath = "";
+	var diskbucket = null; 
 	if(fs.existsSync(filename_disklist)){
-		// we get a list of disks available to us specified in disklist
+		// we get a list of disks (buckets) available to us specified in disklist
 		var disklist_file = fs.readFileSync(filename_disklist)
 		var disklist = JSON.parse(disklist_file);
 		var disks_total = disklist.length;
 		console.log(`Reading in disklist gives a result ${disklist} with length ${disklist.length}`);
 
-		// pick a disk to store the file in
+		// pick a bucket to store the file in
 		var targ_disk_num = Math.floor(Math.random()*(disks_total));
+		var back_up_disk_num = (targ_disk_num + 1) % disks_total;
 		console.log(`Generated target disk number ${targ_disk_num}`);
-		var diskpath = disklist[targ_disk_num];
-		console.log(`The disk has path ${diskpath}... creating the file entry now`);
+		console.log(`CURRENTLY UNUSED: Extra variable generated for backup: ${back_up_disk_num}`);
+		var diskbucket = disklist[targ_disk_num];
+		console.log(`The bucket is ${diskbucket["project"]}, ${diskbucket["bucket"]}, ${diskbucket["keyfile"]}... creating the file entry now`);
 
 		// update the metatree
-		console.log(`\nAbout to call filesyscontrol with arguments id ${id}, filename ${filename}, diskpath ${diskpath}`);
-		filesyscontrol.create_file_entry(id, filename, diskpath);
+		console.log(`\nAbout to call filesyscontrol with arguments id ${id}, filename ${filename}, hash ${filenamehash}`);
+		filesyscontrol.create_file_entry(id, filename, diskbucket);
 
 	} else {
-		console.log("This should not happen! Someone tampered with the environment and deleted!");
+		console.log("This should not happen! Someone tampered with the environment and deleted it!");
 	}
 
 	console.log(`After processing, the disk path is ${diskpath}`);
-	return diskpath;
+	return diskbucket;
 }
 
 async function sendTx(privKey, unsignedTx) {

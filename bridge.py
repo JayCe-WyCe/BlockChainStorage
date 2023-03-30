@@ -2,19 +2,18 @@
 # script to provide some friendly interfaces to bridge the API.
 
 import requests
+import hashlib as hlib
 import json
 
-url_ip = None
-url_port = None
+url_path = None
 
 def set_connection(ip, port):
-    global url_ip, url_port
-    url_ip = ip
-    url_port = port
+    global url_path
+    url_path = f"http://{ip}:{port}/"
 
 def upload_file(user_id, filename, filehash,
                 sign_v, sign_r, sign_s, file):
-    url = url_ip + url_port + "/upload_file"
+    url = url_path + "/upload_file"
     print(f"DEBUG: Trying to access the URL {url}")
     headers = {"Content-Type": "application/json"}
     data = {
@@ -32,11 +31,14 @@ def upload_file(user_id, filename, filehash,
     res = requests.post(url, headers=headers, data=payload)
     return res
 
+def content_hash(data):
+    sha = hlib.sha256()
+    sha.update()
 
-
+    
 def add_user(user_id, user_id_hash, sign_v, sign_r, sign_s):
     # add a new user to the system
-    url = url_ip + url_port + "/add_user"
+    url = url_path + "/add_user"
     print(f"DEBUG: Trying to access the URL {url}")
     payload = {"id":user_id,
                "id_hash":user_id_hash,

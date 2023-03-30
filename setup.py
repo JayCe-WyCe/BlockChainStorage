@@ -10,10 +10,10 @@ manager = open("metatree.json", "w")
 json.dump([], manager)
 manager.close()
 
-# create a simple list of disks and their paths
-diskpath = "/home/kali/Projects/bcapi/storage"
-os.mkdir(diskpath)
-disklist = open("disklist.json", "w")
-disks = [diskpath]
-json.dump(disks, disklist)
-disklist.close()
+# set up a file for populating buckets u sed for storage.
+keyfilepath = "keyfiles"
+os.mkdir(keyfilepath)
+bucketlist = open("bucketlist.json", "w")
+buckets = []
+json.dump(buckets, bucketlist)
+bucketlist.close()
