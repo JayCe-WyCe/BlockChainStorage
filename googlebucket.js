@@ -4,7 +4,7 @@ const {Storage} = require('@google-cloud/storage');
 
 
 // Uploads a file to a bucket
-async function gcuploadFile(bucketName, fileName, fileData, bucket_provider) {
+async function gc_uploadFile(bucketName, fileName, fileData, bucket_provider) {
 
   var storage = new Storage(bucket_provider);
 
@@ -36,7 +36,7 @@ async function gcuploadFile(bucketName, fileName, fileData, bucket_provider) {
 
 
 // Read the file from a bucket
-async function gcreadFile(bucketName, fileName, bucket_provider) {
+async function gc_readFile(bucketName, fileName, bucket_provider) {
   var storage = new Storage(bucket_provider);
 
   const file = storage.bucket(bucketName).file(fileName);
@@ -49,23 +49,8 @@ async function gcreadFile(bucketName, fileName, bucket_provider) {
 }
 
 
-//Update a file in the bucket
-async function gcupdateFile(bucketName, fileName, bucket_provider) {
-  var storage = new Storage(bucket_provider);
-
-  const file = storage.bucket(bucketName).file(fileName);
-
-  const newContents = 'No 4 times: This is the new content of the prog.c file';
-  await file.save(newContents);
-
-  console.log('File updated.');
-
-  storage = null;
-}
-
-
 //Delete a file from a bucket
-async function gcdeleteFile(bucketName, fileName, bucket_provider) {
+async function gc_deleteFile(bucketName, fileName, bucket_provider) {
   var storage = new Storage(bucket_provider);
 
   await storage.bucket(bucketName).file(fileName).delete();
@@ -76,7 +61,7 @@ async function gcdeleteFile(bucketName, fileName, bucket_provider) {
 }
 
 // Check if a bucket exists or not
-async function gccheckBucketStatus(bucketName, bucket_provider) {
+async function gc_checkBucketStatus(bucketName, bucket_provider) {
   var storage = new Storage();
 
   const bucket = storage.bucket(bucketName);
@@ -93,3 +78,9 @@ async function gccheckBucketStatus(bucketName, bucket_provider) {
   storage = null;
   return result;
 }
+
+// export all the necessary functions.
+module.exports = {"gc_uploadFile":gc_uploadFile,
+				  "gc_readFile":gc_readFile,
+				  "gc_deleteFile":gc_deleteFile,
+				  "gc_checkBucketStatus":gc_checkBucketStatus};
