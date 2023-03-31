@@ -63,6 +63,12 @@ def sign_message(message, prikey):
     r = hex(signed.r)
     s = hex(signed.s)
     signpackage = (signed.messageHash, (v, r, s))
+
+    print(f"\n\n>>> WARNING <<<\n\n")
+    print(f"Currently the hash is sent as {type(signpackage[0])}")
+    print(f"This may cause the request to CRASH!")
+    print(f"In the case it doesn't, it is safe to remove this warning")
+    print(f"\n\n")
      
     return signpackage
 
