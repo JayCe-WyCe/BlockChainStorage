@@ -54,6 +54,14 @@ function manage_upload(id, filename, filenamehash, filecontent){
 		//fs.writeFileSync(diskpath+"/"+filename, filecontent);
 	} else {
 		// the file is already in the system, so only need to save the file
+
+		// WE NEED TO UPDATE THE METADATA TOO ACTUALLY! SINCE WE ADDED FILESIZE!
+		// added function upload_existing() below to handle
+		// I added one auxillary function to help :) It is called update_file_metadata()
+		// The existing_file variable above is actually the file, so you can modify the attributes directly
+		// (refer to filesyscontrol.js) after modifying the values, use update_file_metadata() to update metatree
+		upload_existing();
+
 		// existing_file is a file metadata object, which contains filename, diskpath, and collaborators etc.
 		console.log(`The file is not new, so we just need to save it again with no changes to metadata`);
 		var diskbucket = existing_file["diskbucket"];
@@ -69,6 +77,10 @@ function manage_upload(id, filename, filenamehash, filecontent){
 		/* DON'T FORGET TO MIRROR THESE ACTIONS ON THE OTHER BRANCH IN manage_upload()*/
 
 
+}
+
+function upload_existing(){
+	console.log("PLEASE FILL ME UP WITH CODE");
 }
 
 // note: we need to modify to include file ID. also edit filesyscontrol.create_file_entry()
