@@ -4,8 +4,11 @@
 	away the code clutter. Note that this is simply for auxillary functions.
 */
 const fs = require('fs');
+const StandardMerkleTree = require( "@openzeppelin/merkle-tree");
+
 const Web3 = require('web3');
 const filesyscontrol = require("./filesyscontrol");
+const googlebucket = require("./googlebucket")
 
 const filename_accounts = "accounts.json";
 const filename_disklist = "bucketlist.json"; 
@@ -29,6 +32,40 @@ function insert_user(id, identifier){
 	var successful_insert = filesyscontrol.create_user_entry(id);
 	return successful_insert;
 }
+
+
+// This function will create the merkle tree for user, and then make the call the the end to update/add the merkle tree in metadata as well as on the blockchain.
+// updateUserHash is the contract function used for updating the blockchain data.
+function setUserMerkleData(userAddr,fileName)
+{
+var fileName_list=[]
+console.log(`Testing log:  ${fileName}`)
+var existing_file = filesyscontrol.check_file_existence(userAddr, fileName);
+if(existing_file===null || existing_file===undefined )
+{
+	merkle_json=filesyscontrol.getMerkleTree(userAddr)
+	if(merkle_json !== null && merkle_json!= undefined && merkle_json!== '')
+	{
+		console.log("loading tree",JSON.parse(JSON.stringify(merkle_json)))
+		const userTree=StandardMerkleTree.StandardMerkleTree.load(JSON.parse(merkle_json))
+		for (const [i, v] of userTree.entries()) 
+		{
+			fileName_list.push(v)	
+			fileName_list.push([fileName])
+		}	
+	}
+	fileName_list.push([fileName])
+	console.log(`Merkle tree is being built using  ${fileName_list}`)
+	const tree=StandardMerkleTree.StandardMerkleTree.of(fileName_list,['string'])
+
+	const root=tree.root
+	console.log("merkle root:",root)
+	filesyscontrol.setMerkleTree(userAddr,tree)
+	updateUserHash(userAddr,root)
+	
+	
+}
+};	
 
 async function authenticate(addr, signatureObj){
 	var authenticated = false;
@@ -67,18 +104,66 @@ function manage_upload(id, filename, filenamehash, filecontent){
 		var diskbucket = existing_file["diskbucket"];
 		//fs.writeFileSync(diskpath+"/"+filename, filecontent);
 	}
-
-		// store the actual file (may be inside if-statement if applicable)
+// store the actual file (may be inside if-statement if applicable)
 		// --> call the gc_upload file function here
 		// --> update the blockchain?
-
 		// TODO
-
 		/* DON'T FORGET TO MIRROR THESE ACTIONS ON THE OTHER BRANCH IN manage_upload()*/
-
-
+		
 }
 
+// This function handles the logic for downloading the file from buckets.
+// If user has access, it tries to download the file from the first bucket in the list, if that bucket is not available it will go to the next bucket until it finds the file.
+function manageDownload(userAddr, filename){
+	console.log(`manage_upload called with parameters id ${id}, filename ${filename}, filecontent ${filecontent}`);
+	console.log(`The file does not already exist, so we have to upload it as a new file!`);
+	var fileBuckets= filesyscontrol.getFileBuckets(userAddr,filename)
+	
+	for(var i=0;i<fileBuckets.length;i++)
+	{
+		var bucket=fileBuckets[i]
+		var bucket_name=bucket['bucket']
+		var bucket_key=bucket['keyfile']
+		var bucket_project_id=bucket["project"]
+		var bucket_provider={
+  			projectId: 'bucket_project_id',
+  			keyFilename: 'bucket_key'
+		};
+		if(googlebucket.gc_checkBucketStatus(bucket_name,bucket_provider))
+		{
+			data=googlebucket.gc_readFile(bucketName,userAddr,filename,bucket_provider)
+			return data;
+		}
+		else
+		{
+			continue;
+		}
+
+	}
+	console.log("File not available- None of the buckets had the file.")
+};
+
+// Verifies the user's access to download a file using merkle tree and root.
+async function authenticateFileAccess(userAddr,filename)
+{
+	var userRootMap;
+	var root=await getUserRootBC(userAddr)
+	console.log("Inside authenticateFileAccess, print root:",root)
+	var merkle_json=filesyscontrol.getMerkleTree(userAddr)
+	const userTree=StandardMerkleTree.StandardMerkleTree.load(JSON.parse(merkle_json))
+	for (const [i, v] of userTree.entries()) {
+		if(v[0]==filename)
+		{
+			const proof = userTree.getProof(i);
+			const isAuth=StandardMerkleTree.StandardMerkleTree.verify(root,['string'],[filename],proof)
+			return isAuth
+		}
+	}
+	return false
+};
+
+
+		
 function upload_existing(){
 	console.log("PLEASE FILL ME UP WITH CODE");
 }
@@ -134,7 +219,36 @@ async function addUser(userAddr, merkleHash, signatureObj) {
 	return resultTx;
 }
 
+// This method gets the user merkle tree root from blockchain
+async function getUserRootBC(userAddr)
+{
+	var addrHashMap=await contractAPI.methods.files(userAddr).call()
+	return addrHashMap
+
+};
+
+// this is just a function i created for gupdating merkle root in my local this can be replaced.
+async function updateUserHash(userAddr, merkleHash) {
+	// const userAddr = userAddr;
+	// const merkleHash = merkleHash;
+	const pendingTx = contractAPI.methods.updateHash(userAddr, merkleHash);
+	console.log("Inside updateMerkleHash:",merkleHash);
+	const gasCost = await web3.eth.estimateGas({
+		"value": 0x0,
+		"data": pendingTx.encodeABI(),
+		"from": ownerAddr,
+		"to": contractAddr
+	});
+	const resultTx = await sendTx(privKey, pendingTx);
+	return resultTx;
+}
+
 // export all the functions.
 module.exports = {"insert_user":insert_user,
 				  "authenticate":authenticate,
-				  "manage_upload":manage_upload};
+				  "manage_upload":manage_upload,
+				  "setUserMerkleData":setUserMerkleData,
+				  "addUser": addUser,
+				  "getUserRootBC": getUserRootBC,
+				  "authenticateFileAccess":authenticateFileAccess
+				};
