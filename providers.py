@@ -1,13 +1,13 @@
 # providers.py
 
-# This script is used toappend or remove a new provider that registers
+# This script is used to append or remove a new provider that registers
 # with the system. When a bucket is being registered with the cloud
 # file manager, they will need to provide:
 # (ProjectID, keyfile-path)
-# we need to add this information to disklist.json
+# we need to add this information to bucketlist.json
 
 # usage:
-# python3 providers.py <append|remove> <project> <bucket number> <keyfile path|null>
+# python3 providers.py <append|remove> <provider public address> <project> <bucket number> <keyfile path|null>
 
 import json
 import sys
