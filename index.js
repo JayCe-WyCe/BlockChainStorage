@@ -8,9 +8,8 @@
 
 const express = require("express")
 const body_parser = require('body-parser');
-const multer = require("multer");
-const util = require("util");
-const process = require("./process")
+
+const process = require("./process") 
 
 // The app variable will be responsible for all API-related calls.
 const app = express();
