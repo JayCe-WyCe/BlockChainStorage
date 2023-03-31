@@ -20,14 +20,15 @@ funcs = {"append":append_provider,
 def append_provider(sargv, jfile):
     # retrieve the google cloud project and the bucket identifier
     # as well as the keypath to allow permission for access accounts
-    project = sargv[2]
-    bucket_num = sargv[3]
-    keyfile_path = sargv[4]
-    print(f"Appending ({project}, {bucket_num}, {keyfile_path})")
+    provider_id = sargv[2]
+    project = sargv[3]
+    bucket_num = sargv[4]
+    keyfile_path = sargv[5]
+    print(f"Appending ({provider_id}, {project}, {bucket_num}, {keyfile_path})")
     # load the bucket list file
     jdata = json.load(jfile)
     # create a new provider entry
-    provider_new = {"project":project, "bucket":bucket_num, "keyfile":keyfile_path}
+    provider_new = {"provider":provider_id, "project":project, "bucket":bucket_num, "keyfile":keyfile_path}
     # add the new provider (of cloud disk storage) and save the file
     jdata.append(provider_new)
     json.dump(jdata, jfile)
@@ -35,13 +36,14 @@ def append_provider(sargv, jfile):
 
 def remove_provider(sargv, jfile):
     # retrieve the google cloud project and the bucket identifier
-    project = sargv[2]
-    bucket_num = sargv[3]
+    provider_id = sargv[2]
+    project = sargv[3]
+    bucket_num = sargv[4]
     # load the bucket list file
     jdata = json.load(jfile)
     # find the entry if it exists, and remove it
     for jentry in jdata:
-        if(jentry["project"]==project and jentry["bucket"]==bucket_num):
+        if(jentry["provider"]==provider_id and jentry["project"]==project and jentry["bucket"]==bucket_num):
             jdata.remove(jentry)
             break
     # save the file
