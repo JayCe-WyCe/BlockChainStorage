@@ -59,6 +59,16 @@ function manage_upload(id, filename, filenamehash, filecontent){
 		var diskbucket = existing_file["diskbucket"];
 		//fs.writeFileSync(diskpath+"/"+filename, filecontent);
 	}
+
+		// store the actual file (may be inside if-statement if applicable)
+		// --> call the gc_upload file function here
+		// --> update the blockchain?
+
+		// TODO
+
+		/* DON'T FORGET TO MIRROR THESE ACTIONS ON THE OTHER BRANCH IN manage_upload()*/
+
+
 }
 
 // note: we need to modify to include file ID. also edit filesyscontrol.create_file_entry()
