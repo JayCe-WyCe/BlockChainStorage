@@ -16,15 +16,15 @@ function load_tree(){
 }
 
 // function to add an entry into the metatree when a new file is being inserted
-function create_file_entry(id, filename, filenamehash, diskbucket){
+function create_file_entry(id, filename, filenamehash, size, diskbuckets){
 	// we may wish to create more args after discussion...
 	console.log(`Inside filesyscontrol, creating file entry using id ${id}, filename ${filename}, diskpath ${diskpath}`);
 	var metatree = load_tree();
 	var users_total = metatree.length;
-	var file_obj = {"filename": filename,
-					"filenamehash": filenamehash, 
-					"diskbucket": diskbucket,
-					"collaborators": []};
+	var file_obj = {"filename": filename,				// string
+					"filenamehash": filenamehash,		// hash
+					"filesize": size,					// int
+					"diskbucket": diskbuckets};			// array
 	var user_index = get_user_by_id(id, metatree);
 	console.log(`The user index is ${user_index}`);
 	if(user_index!==-1){
@@ -57,6 +57,32 @@ function check_file_existence(id, filename){
 	return target_file;
 }
 
+// reinsert a file into the user
+function update_file_metadata(id, filemetadata){
+	var success = true;
+	var metatree = load_tree();
+	var user_id = get_user_by_id(id, metatree);
+	if(user_id!==-1){
+		var user = metatree[user_id];
+		var filename = filemetadata["filename"];
+		// update the file metadata
+		var file_index = get_file_index(user, filename);
+		if(file_index!==-1){
+			console.log("Attempting to write the new file metadata into the metatree!");
+			metatree[user_id]["files"][file_index] = filemetadata;
+			console.log(`The new array in the metatree is ${metatree[user_id]["files"][file_index]}`);
+			console.log("Attempting to write to the metatree file now...");
+			fs.writeFileSync(filename_metatree, JSON.stringify(metatree));
+			console.log("Done writing to the metatree");
+		}
+
+	} else {
+		console.log("This case should be impossible, did someone delete the user?");
+		throw "User not found in the metatree error!";
+	}
+	return success;
+}
+
 // function to check if a user exists, returns the index of the user in the metatree if found
 function get_user_by_id(id, metatree){
 	var user = -1;
@@ -69,6 +95,21 @@ function get_user_by_id(id, metatree){
 	}
 
 	return user;
+}
+
+// function to return the position of the current file index in the array
+function get_file_index(user, filename){
+	var user_files = user["files"];
+	var file_count = user_files.length;
+	var file_index = -1;
+	for(let i=0; i<file_count; i++){
+		if(user_files[i]===filename){
+			file_index = i;
+			break;
+		}
+	}
+
+	return file_index;
 }
 
 // check if a user exists in the metadata file
