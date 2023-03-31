@@ -15,6 +15,42 @@ function load_tree(){
 	return metatree;
 }
 
+// This function will return all the disks on which the file is stored.
+function getFileBuckets(userAddr,fileName)
+{
+	var metatree=load_tree()
+	var userIndex=get_user_by_id(userAddr,metatree)
+	if(userIndex!=null && userIndex!=-1 )
+	{
+		var fileIndex=get_file_index(metatree[userIndex],fileName)
+		var fileBuckets=metatree[userIndex]['files'][fileIndex]['diskbuckets']
+		return fileBuckets
+
+	}
+
+};
+
+
+// Will return the merkle tree realted to a user
+function getMerkleTree(userAddr)
+{
+	var metadata=load_tree()
+	var userIndex=get_user_by_id(userAddr,metadata)
+	return metadata[userIndex]['merkle']
+};
+
+// Will update the merkle tree in the metadataa file.
+function setMerkleTree(userAddr,merkleTree)
+{
+	var metadata=load_tree()
+	var userIndex=get_user_by_id(userAddr,metadata)
+	metadata[userIndex]['merkle']=JSON.stringify(merkleTree.dump())
+	fs.writeFileSync(filename_metatree, JSON.stringify(metadata));	
+}
+
+
+
+
 // function to add an entry into the metatree when a new file is being inserted
 function create_file_entry(id, filename, filenamehash, size, diskbuckets){
 	// we may wish to create more args after discussion...
@@ -153,4 +189,7 @@ function create_user_entry(user_id){
 // export all the necessary functions.
 module.exports = {"create_user_entry":create_user_entry,
 				  "create_file_entry":create_file_entry,
-				  "check_file_existence":check_file_existence};
+				  "check_file_existence":check_file_existence,
+				  "getMerkleTree":getMerkleTree,
+				  "setMerkleTree":setMerkleTree,
+				  "getFileBuckets":getFileBuckets};
