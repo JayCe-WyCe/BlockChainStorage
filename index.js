@@ -46,7 +46,7 @@ function add_user(req, res){
 	if(authenticate_valid){
 		successful_insert = process.insert_user(id);
 // 		When we add the user he wont have any file on the storage so we need to set his merkle root as empty.
-		process.addUser(id,"")
+		process.addUser(id,"",identifier)
 	}
 	res.send(successful_insert);
 };
