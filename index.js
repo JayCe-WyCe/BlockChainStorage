@@ -105,7 +105,7 @@ function download_file(req, res, next)
 		process.authenticateFileAccess(id,filename).then(function(root){console.log(root)
 		if(root)
 		{
-			var content=process.manageDownload(id,filename)
+			var content=process.manageDownload(id,filename,identifier)
 			res.send(content)
 		}
 		else
