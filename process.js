@@ -87,7 +87,8 @@ function manage_upload(id, filename, filenamehash, filecontent){
 	if(existing_file===null){
 		// the file is new and so a new record needs to be inserted
 		console.log(`The file does not already exist, so we have to upload it as a new file!`);
-		var diskbucket = upload_new(id, filenamehash, filename);
+		var replication_factor=2
+		var diskbucket = upload_new(id, filenamehash, filename,replication_factor,filecontent);
 		//fs.writeFileSync(diskpath+"/"+filename, filecontent);
 	} else {
 		// the file is already in the system, so only need to save the file
@@ -115,8 +116,7 @@ function manage_upload(id, filename, filenamehash, filecontent){
 // This function handles the logic for downloading the file from buckets.
 // If user has access, it tries to download the file from the first bucket in the list, if that bucket is not available it will go to the next bucket until it finds the file.
 function manageDownload(userAddr, filename){
-	console.log(`manage_upload called with parameters id ${id}, filename ${filename}, filecontent ${filecontent}`);
-	console.log(`The file does not already exist, so we have to upload it as a new file!`);
+
 	var fileBuckets= filesyscontrol.getFileBuckets(userAddr,filename)
 	
 	for(var i=0;i<fileBuckets.length;i++)
@@ -164,21 +164,33 @@ async function authenticateFileAccess(userAddr,filename)
 
 
 		
-function upload_existing(){
-	console.log("PLEASE FILL ME UP WITH CODE");
+function upload_existing(userAddr,filename,fileContent){
+        var fileBuckets= filesyscontrol.getFileBuckets(userAddr,filename)
+	for(var i=0;i<fileBuckets.length;i++)
+	{
+		var bucket=fileBuckets[i]
+		var bucket_name=bucket['bucket']
+		var bucket_key=bucket['keyfile']
+		var bucket_project_id=bucket["project"]
+		var bucket_provider={
+  			projectId: bucket_project_id,
+  			keyFilename: bucket_key
+		};
+		gc_uploadFile(bucket_name,userAddr,filename,bucket_provider,fileContent)	
+	}
 }
 
 // note: we need to modify to include file ID. also edit filesyscontrol.create_file_entry()
-function upload_new(id, filename, filenamehash){
-	// we now wish to store the file, we assume we are already authenticated.
-	// two parts: first, generate disk. second, add the file to metatree.
-	console.log(`upload_new called, checking to update metadata...`);
-	var diskbucket = null; 
-	if(fs.existsSync(filename_disklist)){
-		// we get a list of disks (buckets) available to us specified in disklist
-		var disklist_file = fs.readFileSync(filename_disklist)
-		var disklist = JSON.parse(disklist_file);
-		console.log(`Reading in disklist gives a result ${disklist} with length ${disklist.length}`);
+function upload_new(id, filename, filenamehash, replication_factor,filecontent) {
+    // we now wish to store the file, we assume we are already authenticated.
+    // two parts: first, generate disk. second, add the file to metatree.
+    console.log(`upload_new called, checking to update metadata...`);
+    var diskbuckets = [];
+    if (fs.existsSync(filename_disklist)) {
+        // we get a list of disks (buckets) available to us specified in disklist
+        var disklist_file = fs.readFileSync(filename_disklist)
+        var disklist = JSON.parse(disklist_file);
+        console.log(`Reading in disklist gives a result ${disklist} with length ${disklist.length}`);
 
         // shuffle the disklist and pick the first n entries
         disklist = shuffleArray(disklist);
@@ -188,6 +200,14 @@ function upload_new(id, filename, filenamehash){
         // pick n buckets to store the file in
         for (var i = 0; i < disklist.length; i++) {
             var diskbucket = disklist[i];
+			var bucket_name=diskbucket['bucket']
+			var bucket_key=diskbucket['keyfile']
+			var bucket_project_id=diskbucket["project"]
+			var bucket_provider={
+  			projectId: bucket_project_id,
+  			keyFilename: bucket_key
+		};
+			gc_uploadFile(bucket_name,userAddr,filename,bucket_provider,filecontent)
             console.log(`The bucket is ${diskbucket["project"]}, ${diskbucket["bucket"]}, ${diskbucket["keyfile"]}`);
             diskbuckets.push(diskbucket);
         }
@@ -202,6 +222,7 @@ function upload_new(id, filename, filenamehash){
     console.log(`After processing, the disk path is ${diskpath}`);
     return diskbuckets;
 }
+
 
 function shuffleArray(array) {
     for (var i = array.length - 1; i > 0; i--) {
