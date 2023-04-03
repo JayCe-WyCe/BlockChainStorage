@@ -36,7 +36,7 @@ function insert_user(id, identifier){
 
 // This function will create the merkle tree for user, and then make the call the the end to update/add the merkle tree in metadata as well as on the blockchain.
 // updateUserHash is the contract function used for updating the blockchain data.
-function setUserMerkleData(userAddr,fileName)
+function setUserMerkleData(userAddr,fileName,identifier)
 {
 var fileName_list=[]
 console.log(`Testing log:  ${fileName}`)
@@ -61,7 +61,7 @@ if(existing_file===null || existing_file===undefined )
 	const root=tree.root
 	console.log("merkle root:",root)
 	filesyscontrol.setMerkleTree(userAddr,tree)
-	updateUserHash(userAddr,root)
+	updateUserHash(userAddr,root,identifier)
 	
 	
 }
