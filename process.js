@@ -257,7 +257,7 @@ async function addUser(userAddr, merkleHash, hasFile, signatureObj) {
 
 async function removeUser(userAddr, signatureObj) {
 	console.log("[func] removeUser: Attempting to remove the user...");
-	const pendingTx = contractAPI.methods.removeUser(userAddr, testing);
+	const pendingTx = contractAPI.methods.removeUser(userAddr, signatureObj);
 	console.log("[func] removeUser: After contract remove user is called...");
 	const resultTx = await sendTx(privKey, pendingTx);
 	console.log(`[func] removeUser: After grabbing the result ${JSON.stringify(resultTx)}`);
