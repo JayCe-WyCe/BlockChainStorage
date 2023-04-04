@@ -247,6 +247,8 @@ async function sendTx(privKey, unsignedTx) {
 }
 
 async function addUser(userAddr, merkleHash, signatureObj) {
+	console.log("addUser function called for web3 stuff... (I suspect it fails here)");
+	console.log(`These are the values being passed in: userAddr ${userAddr}, merkleHash ${merkleHash}, signatureObj ${JSON.stringify(signatureObj)}`);
 	const pendingTx = contractAPI.methods.addUser(userAddr, merkleHash, signatureObj);
 	const resultTx = await sendTx(privKey, pendingTx);
 	return resultTx;
