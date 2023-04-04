@@ -14,9 +14,8 @@ const process = require("./process")
 // The app variable will be responsible for all API-related calls.
 const app = express();
 app.use(body_parser.json());
-const upload = multer({dest: 'storage/'});
 
-const server_port = 3000;
+const server_port = 3125;
 
 // Define API functions
 
