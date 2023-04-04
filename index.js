@@ -44,20 +44,22 @@ async function add_user(req, res){
 	var successful_insert = false;
 	if(authenticate_valid){
 		successful_insert = process.insert_user(id);
-// 		When we add the user he wont have any file on the storage so we need to set his merkle root as empty.
-		try {
-			// please remove the below 2 lines when not in test mode
-			const TEST_MODE = true;
-			if(TEST_MODE){ await process.removeUser(id, identifier)};
-			console.log("Adding user now...");
-			await process.addUser(id, 0x0, false, identifier)
-		} catch (err) {
-			console.log("WARNING: Attempting to add a user that already exists to the blockchain!");
+		if(successful_insert) {
+			// When we add the user he wont have any file on the storage so we need to set his merkle root as empty.
 			try {
-				var user_info = await process.getUser(id);
-				console.log(`More information: ${JSON.stringify(user_info)}`);
-			} catch (err2) {
-				console.log(`This is not supposed to happen! (This is just how life works) ${err2}`);
+				// please remove the below 2 lines when not in test mode
+				const TEST_MODE = true;
+				if(TEST_MODE){ await process.removeUser(id, identifier)};
+				console.log("Adding user now...");
+				await process.addUser(id, 0x0, false, identifier)
+			} catch (err) {
+				console.log("WARNING: Attempting to add a user that already exists to the blockchain!");
+				try {
+					var user_info = await process.getUser(id);
+					console.log(`More information: ${JSON.stringify(user_info)}`);
+				} catch (err2) {
+					console.log(`This is not supposed to happen! (This is just how life works) ${err2}`);
+				}
 			}
 		}
 
@@ -65,7 +67,7 @@ async function add_user(req, res){
 	res.send(successful_insert);
 };
 
-function upload_file(req, res, next){
+async function upload_file(req, res, next){
 	console.log(`\nUpload file API is called.\n`);
 	var id = atob(req.body["metadata"]["id"]);
 	var filename = atob(req.body["metadata"]["filename"]);
@@ -80,7 +82,7 @@ function upload_file(req, res, next){
 	var identifier = {"hashedMessage":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
 	//var contents = req.file.buffer;
 	console.log(`filename ${filename}, filehash ${filehash}, v ${sign_v}, r ${sign_r}, s ${sign_s}`);
-	var authenticate_valid = process.authenticate(id, identifier);
+	var authenticate_valid = await process.authenticate(id, identifier);
 	if(authenticate_valid){
 		console.log(`The authentication is valid, we can now store the contents: ${filecontent}`);
 		try {
@@ -98,7 +100,7 @@ function upload_file(req, res, next){
 }
 
 // Logic to handke the download of the file.
-function download_file(req, res, next)
+async function download_file(req, res, next)
 {
 	console.log(`\Download file API is called.\n`);
 	var id = req.body["metadata"]["id"];
@@ -113,7 +115,7 @@ function download_file(req, res, next)
 	var identifier = {"hashedMessage":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
 	//var contents = req.file.buffer;
 	console.log(`filename ${filename}, filehash ${filehash}, v ${sign_v}, r ${sign_r}, s ${sign_s}`);
-	var authenticate_valid = process.authenticate(id, identifier);
+	var authenticate_valid = await process.authenticate(id, identifier);
 	if(authenticate_valid){
 		console.log(`The authentication is valid, we can now download the file: ${filename}`);
 		process.authenticateFileAccess(id,filename).then(function(root){console.log(root)
