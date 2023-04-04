@@ -49,8 +49,8 @@ async function add_user(req, res){
 			// please remove the below 2 lines when not in test mode
 			const TEST_MODE = true;
 			if(TEST_MODE){ await process.removeUser(id, identifier)};
-
-			await process.addUser(id, 0x0, true, identifier)
+			console.log("Adding user now...");
+			await process.addUser(id, 0x0, false, identifier)
 		} catch (err) {
 			console.log("WARNING: Attempting to add a user that already exists to the blockchain!");
 			try {
