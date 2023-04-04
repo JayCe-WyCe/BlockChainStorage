@@ -69,6 +69,7 @@ if(existing_file===null || existing_file===undefined )
 
 async function authenticate(addr, signatureObj){
 	var authenticated = false;
+	console.log(`[func] authenticate: Taking in params ${addr}, ${JSON.stringify(signatureObj)}`);
 	var ret_addr = await contractAPI.methods.VerifyMessage(signatureObj["hashedMessage"], signatureObj["v"], signatureObj["r"], signatureObj["s"]).call();
 	// check if the user owns this account
 	console.log("This is the authentication. This message should appear BEFORE the addUser function!");

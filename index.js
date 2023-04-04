@@ -29,11 +29,11 @@ async function add_user(req, res){
 	// id: a signed hash of the ethereum address
 	// v, r, s: public key
 	console.log("Testing add_user function API call");
-	var id = "0x"+Buffer.from(req.body["metadata"]["id"], "base64").toString('hex').toUpperCase();
-	var id_hash = "0x"+Buffer.from(req.body["metadata"]["id_hash"], "base64").toString('hex').toUpperCase();
-	var sign_v = "0x"+Buffer.from(req.body["metadata"]["sign_v"], "base64").toString('hex').toUpperCase();
-	var sign_r = "0x"+Buffer.from(req.body["metadata"]["sign_r"], "base64").toString('hex').toUpperCase();
-	var sign_s = "0x"+Buffer.from(req.body["metadata"]["sign_s"], "base64").toString('hex').toUpperCase();
+	var id = req.body["metadata"]["id"];
+	var id_hash = req.body["metadata"]["id_hash"];
+	var sign_v = req.body["metadata"]["sign_v"];
+	var sign_r = req.body["metadata"]["sign_r"];
+	var sign_s = req.body["metadata"]["sign_s"];
 
 	// create the new user account extracted from the request
 	var identifier = {"hashedMessage":id_hash, "v":sign_v, "r":sign_r, "s":sign_s };
@@ -71,12 +71,6 @@ async function add_user(req, res){
 
 async function upload_file(req, res, next){
 	console.log(`\nUpload file API is called.\n`);
-	//var id = "0x"+Buffer.from(req.body["metadata"]["id"], "base64").toString('hex').toUpperCase();
-	//var filename = Buffer.from(req.body["metadata"]["filename"]).toString('utf-8');
-	
-	//var sign_v = "0x"+Buffer.from(req.body["metadata"]["sign_v"], "base64").toString('hex').toUpperCase();
-	//var sign_r = "0x"+Buffer.from(req.body["metadata"]["sign_r"], "base64").toString('hex').toUpperCase();
-	//var sign_s = "0x"+Buffer.from(req.body["metadata"]["sign_s"], "base64").toString('hex').toUpperCase();
 
 	var id = req.body["metadata"]["id"];
 	var filename = req.body["metadata"]["filename"];
