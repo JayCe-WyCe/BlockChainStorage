@@ -9,21 +9,21 @@ const fs = require('fs');
 const filename_metatree = "metatree.json";
 
 // function to load the metadata file keeping track of the filesystem
-function load_tree(){
+async function load_tree(){
 	var metatreejson = fs.readFileSync(filename_metatree)
 	var metatree = JSON.parse(metatreejson);
 	return metatree;
 }
 
 // This function will return all the disks on which the file is stored.
-function getFileBuckets(userAddr,fileName)
+async function getFileBuckets(userAddr,fileName)
 {
-	var metatree=load_tree()
-	var userIndex=get_user_by_id(userAddr,metatree)
-	if(userIndex!=null && userIndex!=-1 )
+	var metatree = await load_tree();
+	var userIndex = await get_user_by_id(userAddr,metatree);
+	if(userIndex!=null && userIndex!=-1)
 	{
-		var fileIndex=get_file_index(metatree[userIndex],fileName)
-		var fileBuckets=metatree[userIndex]['files'][fileIndex]['diskbuckets']
+		var fileIndex=get_file_index(metatree[userIndex],fileName);
+		var fileBuckets=metatree[userIndex]['files'][fileIndex]['diskbuckets'];
 		return fileBuckets
 
 	}
@@ -34,16 +34,16 @@ function getFileBuckets(userAddr,fileName)
 // Will return the merkle tree realted to a user
 function getMerkleTree(userAddr)
 {
-	var metadata=load_tree()
-	var userIndex=get_user_by_id(userAddr,metadata)
+	var metadata= await load_tree()
+	var userIndex= await get_user_by_id(userAddr,metadata)
 	return metadata[userIndex]['merkle']
 };
 
 // Will update the merkle tree in the metadataa file.
 function setMerkleTree(userAddr,merkleTree)
 {
-	var metadata=load_tree()
-	var userIndex=get_user_by_id(userAddr,metadata)
+	var metadata= await load_tree()
+	var userIndex= await get_user_by_id(userAddr,metadata)
 	metadata[userIndex]['merkle']=JSON.stringify(merkleTree.dump())
 	fs.writeFileSync(filename_metatree, JSON.stringify(metadata));	
 }
@@ -52,16 +52,16 @@ function setMerkleTree(userAddr,merkleTree)
 
 
 // function to add an entry into the metatree when a new file is being inserted
-function create_file_entry(id, filename, filenamehash, size, diskbuckets){
+async function create_file_entry(id, filename, filenamehash, size, diskbuckets){
 	// we may wish to create more args after discussion...
 	console.log(`Inside filesyscontrol, creating file entry using id ${id}, filename ${filename}, diskpath ${diskpath}`);
-	var metatree = load_tree();
+	var metatree = await load_tree();
 	var users_total = metatree.length;
 	var file_obj = {"filename": filename,				// string
 					"filenamehash": filenamehash,		// hash
 					"filesize": size,					// int
 					"diskbucket": diskbuckets};			// array
-	var user_index = get_user_by_id(id, metatree);
+	var user_index = await get_user_by_id(id, metatree);
 	console.log(`The user index is ${user_index}`);
 	if(user_index!==-1){
 		console.log(`Found the user ${id}, attempting to update metatree...`);
@@ -74,10 +74,10 @@ function create_file_entry(id, filename, filenamehash, size, diskbuckets){
 }
 
 // function to check if a file already exists in the system
-function check_file_existence(id, filename){
+async function check_file_existence(id, filename){
 	console.log(`Inside check_file_existence to see if a filename already exists with a user`);
-	var metatree = load_tree();
-	var user_index = get_user_by_id(id, metatree);
+	var metatree = await load_tree();
+	var user_index = await get_user_by_id(id, metatree);
 	console.log(`The user index is ${user_index}`);
 	var user = metatree[user_index];
 	var user_files = user["files"];
@@ -94,10 +94,10 @@ function check_file_existence(id, filename){
 }
 
 // reinsert a file into the user
-function update_file_metadata(id, filemetadata){
+async function update_file_metadata(id, filemetadata){
 	var success = true;
 	var metatree = load_tree();
-	var user_id = get_user_by_id(id, metatree);
+	var user_id = await get_user_by_id(id, metatree);
 	if(user_id!==-1){
 		var user = metatree[user_id];
 		var filename = filemetadata["filename"];
@@ -120,7 +120,7 @@ function update_file_metadata(id, filemetadata){
 }
 
 // function to check if a user exists, returns the index of the user in the metatree if found
-function get_user_by_id(id, metatree){
+async function get_user_by_id(id, metatree){
 	var user = -1;
 	var users_total = metatree.length;
 	for(let i=0; i<users_total; i++){
@@ -149,8 +149,8 @@ function get_file_index(user, filename){
 }
 
 // check if a user exists in the metadata file
-function check_user_exists(id, metatree){
-	var targ_user = get_user_by_id(id, metatree);
+async function check_user_exists(id, metatree){
+	var targ_user = await get_user_by_id(id, metatree);
 	var user_exists = true;
 	if(targ_user===-1){
 		user_exists = false;
@@ -159,11 +159,11 @@ function check_user_exists(id, metatree){
 }
 
 // function to create a brand new user in the system
-function create_user_entry(user_id){
+async function create_user_entry(user_id){
 	var metatree = load_tree();
 
 	// check that the user exists in the system
-	var existing = check_user_exists(user_id, metatree);
+	var existing = await check_user_exists(user_id, metatree);
 	console.log(`Attempting to create a new user, does the user ${user_id} exist? ${existing}`);
 	var created = true;
 	if(!existing){

@@ -28,8 +28,8 @@ const contractAddr = "0x308f37D38DD6af6fCF22f71d4CFB0153008f2449";
 const contractAPI = new web3.eth.Contract(fileAbi, contractAddr);
 
 /*Function: add a new user to the user json*/
-function insert_user(id, identifier){
-	var successful_insert = filesyscontrol.create_user_entry(id);
+async function insert_user(id, identifier){
+	var successful_insert = await filesyscontrol.create_user_entry(id);
 	return successful_insert;
 }
 

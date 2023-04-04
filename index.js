@@ -61,6 +61,8 @@ async function add_user(req, res){
 					console.log(`This is not supposed to happen! (This is just how life works) ${err2}`);
 				}
 			}
+		} else {
+			console.log("The user already exists in the metatree system, insertion fail!");
 		}
 
 	}
