@@ -25,28 +25,28 @@ function server_start(){
 }
 
 
-function add_user(req, res){
+async function add_user(req, res){
 	// we will expect the following keys:
 	// id: a signed hash of the ethereum address
 	// v, r, s: public key
 	console.log("Testing add_user function API call");
-	var id = "0x"+Buffer.from(req.body["metadata"]["id"], "base64").toString('hex');
-	var id_hash = "0x"+Buffer.from(req.body["metadata"]["id_hash"], "base64").toString('hex');
-	var sign_v = "0x"+Buffer.from(req.body["metadata"]["sign_v"], "base64").toString('hex');
-	var sign_r = "0x"+Buffer.from(req.body["metadata"]["sign_r"], "base64").toString('hex');
-	var sign_s = "0x"+Buffer.from(req.body["metadata"]["sign_s"], "base64").toString('hex');
+	var id = "0x"+Buffer.from(req.body["metadata"]["id"], "base64").toString('hex').toUpperCase();
+	var id_hash = "0x"+Buffer.from(req.body["metadata"]["id_hash"], "base64").toString('hex').toUpperCase();
+	var sign_v = "0x"+Buffer.from(req.body["metadata"]["sign_v"], "base64").toString('hex').toUpperCase();
+	var sign_r = "0x"+Buffer.from(req.body["metadata"]["sign_r"], "base64").toString('hex').toUpperCase();
+	var sign_s = "0x"+Buffer.from(req.body["metadata"]["sign_s"], "base64").toString('hex').toUpperCase();
 
 	// create the new user account extracted from the request
 	var identifier = {"hashedMessage":id_hash, "v":sign_v, "r":sign_r, "s":sign_s };
 	console.log(`add_user function called. looking at values from the request:`);
 	console.log(`The values from request: ${id} ${id_hash} and ${sign_v}, ${sign_r}, ${sign_s}`);
 
-	var authenticate_valid = process.authenticate(id, identifier);
+	var authenticate_valid = await process.authenticate(id, identifier);
 	var successful_insert = false;
 	if(authenticate_valid){
 		successful_insert = process.insert_user(id);
 // 		When we add the user he wont have any file on the storage so we need to set his merkle root as empty.
-		process.addUser(id,"",identifier)
+		process.addUser(id, 0x0, identifier)
 	}
 	res.send(successful_insert);
 };
