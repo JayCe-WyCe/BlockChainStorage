@@ -52,7 +52,7 @@ async function add_user(req, res){
 
 			await process.addUser(id, 0x0, identifier)
 		} catch (err) {
-			console.log("WARNING: Attempting to add a user that already exists!");
+			console.log("WARNING: Attempting to add a user that already exists to the blockchain!");
 			try {
 				var user_info = await process.getUser(id);
 				console.log(`More information: ${JSON.stringify(user_info)}`);

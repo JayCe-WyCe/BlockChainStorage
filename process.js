@@ -299,6 +299,7 @@ module.exports = {"insert_user":insert_user,
 				  "setUserMerkleData":setUserMerkleData,
 				  "addUser": addUser,
 				  "getUser": getUser,
+				  "removeUser": removeUser,
 				  "getUserRootBC": getUserRootBC,
 				  "authenticateFileAccess":authenticateFileAccess
 				};
