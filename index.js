@@ -71,14 +71,17 @@ async function add_user(req, res){
 
 async function upload_file(req, res, next){
 	console.log(`\nUpload file API is called.\n`);
-	var id = atob(req.body["metadata"]["id"]);
-	var filename = atob(req.body["metadata"]["filename"]);
-	var filehash = atob(req.body["metadata"]["filehash"]); // note currently set to hash of filename, not content
-	var sign_v = atob(req.body["metadata"]["sign_v"]);
-	var sign_r = atob(req.body["metadata"]["sign_r"]);
-	var sign_s = atob(req.body["metadata"]["sign_s"]);
+	var id = "0x"+Buffer.from(req.body["metadata"]["id"], "base64").toString('hex').toUpperCase();
+	var filename = Buffer.from(req.body["metadata"]["filename"]).toString('utf-8');
+	var filehash = "0x"+Buffer.from(req.body["metadata"]["filehash"]).toString('hex').toUpperCase();
+	var sign_v = "0x"+Buffer.from(req.body["metadata"]["sign_v"], "base64").toString('hex').toUpperCase();
+	var sign_r = "0x"+Buffer.from(req.body["metadata"]["sign_r"], "base64").toString('hex').toUpperCase();
+	var sign_s = "0x"+Buffer.from(req.body["metadata"]["sign_s"], "base64").toString('hex').toUpperCase();
 
 	var filecontent = req.body["filecontent"];
+
+	console.log(`\nid, filename, filehash, v, r, s = ${id}, ${filename}, ${filehash}, ${sign_v}, ${sign_r}, ${sign_s}`);
+	console.log(`The file contents = ${filecontent}`);
 
 	// the user signs the file, and so we check that the user actually owns the file
 	var identifier = {"hashedMessage":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
