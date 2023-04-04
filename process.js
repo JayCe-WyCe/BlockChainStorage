@@ -182,7 +182,6 @@ async function upload_existing(userAddr,filename,fileContent){
 
 		try {
 			// don't want to append file, so delete the old one and replace.
-			googlebucket.gc_deleteFile(bucket_name,userAddr,filename,bucket_provider);
 			googlebucket.gc_uploadFile(bucket_name,userAddr,filename,fileContent,bucket_provider);
 		} catch (err) {
 			console.log(`Failed to replace existing file... Error reason:\n{err}`);
