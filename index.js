@@ -71,12 +71,19 @@ async function add_user(req, res){
 
 async function upload_file(req, res, next){
 	console.log(`\nUpload file API is called.\n`);
-	var id = "0x"+Buffer.from(req.body["metadata"]["id"], "base64").toString('hex').toUpperCase();
-	var filename = Buffer.from(req.body["metadata"]["filename"]).toString('utf-8');
-	var filehash = req.body["metabody"]["filehash"];
-	var sign_v = "0x"+Buffer.from(req.body["metadata"]["sign_v"], "base64").toString('hex').toUpperCase();
-	var sign_r = "0x"+Buffer.from(req.body["metadata"]["sign_r"], "base64").toString('hex').toUpperCase();
-	var sign_s = "0x"+Buffer.from(req.body["metadata"]["sign_s"], "base64").toString('hex').toUpperCase();
+	//var id = "0x"+Buffer.from(req.body["metadata"]["id"], "base64").toString('hex').toUpperCase();
+	//var filename = Buffer.from(req.body["metadata"]["filename"]).toString('utf-8');
+	
+	//var sign_v = "0x"+Buffer.from(req.body["metadata"]["sign_v"], "base64").toString('hex').toUpperCase();
+	//var sign_r = "0x"+Buffer.from(req.body["metadata"]["sign_r"], "base64").toString('hex').toUpperCase();
+	//var sign_s = "0x"+Buffer.from(req.body["metadata"]["sign_s"], "base64").toString('hex').toUpperCase();
+
+	var id = req.body["metadata"]["id"];
+	var filename = req.body["metadata"]["filename"];
+	var filehash = req.body["metadata"]["filehash"];
+	var sign_v = req.body["metadata"]["sign_v"];
+	var sign_r = req.body["metadata"]["sign_r"];
+	var sign_s = req.body["metadata"]["sign_s"];
 
 	var filecontent = req.body["filecontent"];
 
