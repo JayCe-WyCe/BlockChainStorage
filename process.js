@@ -178,7 +178,7 @@ function upload_existing(userAddr,filename,fileContent){
   			projectId: bucket_project_id,
   			keyFilename: bucket_key
 		};
-		gc_uploadFile(bucket_name,userAddr,filename,bucket_provider,fileContent)	
+		googlebucket.gc_uploadFile(bucket_name,userAddr,filename,bucket_provider,fileContent)	
 	}
 }
 
@@ -209,7 +209,7 @@ function upload_new(id, filename, filenamehash, replication_factor,filecontent) 
   			projectId: bucket_project_id,
   			keyFilename: bucket_key
 		};
-			gc_uploadFile(bucket_name,userAddr,filename,bucket_provider,filecontent)
+			googlebucket.gc_uploadFile(bucket_name,userAddr,filename,bucket_provider,filecontent)
             console.log(`The bucket is ${diskbucket["project"]}, ${diskbucket["bucket"]}, ${diskbucket["keyfile"]}`);
             diskbuckets.push(diskbucket);
         }
