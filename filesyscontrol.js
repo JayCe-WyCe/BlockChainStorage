@@ -22,7 +22,7 @@ async function getFileBuckets(userAddr,fileName)
 	var userIndex = await get_user_by_id(userAddr,metatree);
 	if(userIndex!=null && userIndex!=-1)
 	{
-		var fileIndex=get_file_index(metatree[userIndex],fileName);
+		var fileIndex = await get_file_index(metatree[userIndex],fileName);
 		var fileBuckets=metatree[userIndex]['files'][fileIndex]['diskbuckets'];
 		return fileBuckets
 
@@ -32,7 +32,7 @@ async function getFileBuckets(userAddr,fileName)
 
 
 // Will return the merkle tree realted to a user
-function getMerkleTree(userAddr)
+async function getMerkleTree(userAddr)
 {
 	var metadata= await load_tree()
 	var userIndex= await get_user_by_id(userAddr,metadata)
@@ -40,7 +40,7 @@ function getMerkleTree(userAddr)
 };
 
 // Will update the merkle tree in the metadataa file.
-function setMerkleTree(userAddr,merkleTree)
+async function setMerkleTree(userAddr,merkleTree)
 {
 	var metadata= await load_tree()
 	var userIndex= await get_user_by_id(userAddr,metadata)
@@ -102,7 +102,7 @@ async function update_file_metadata(id, filemetadata){
 		var user = metatree[user_id];
 		var filename = filemetadata["filename"];
 		// update the file metadata
-		var file_index = get_file_index(user, filename);
+		var file_index = await get_file_index(user, filename);
 		if(file_index!==-1){
 			console.log("Attempting to write the new file metadata into the metatree!");
 			metatree[user_id]["files"][file_index] = filemetadata;
@@ -134,7 +134,7 @@ async function get_user_by_id(id, metatree){
 }
 
 // function to return the position of the current file index in the array
-function get_file_index(user, filename){
+async function get_file_index(user, filename){
 	var user_files = user["files"];
 	var file_count = user_files.length;
 	var file_index = -1;
