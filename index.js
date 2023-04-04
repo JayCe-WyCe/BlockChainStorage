@@ -73,7 +73,7 @@ async function upload_file(req, res, next){
 	console.log(`\nUpload file API is called.\n`);
 	var id = "0x"+Buffer.from(req.body["metadata"]["id"], "base64").toString('hex').toUpperCase();
 	var filename = Buffer.from(req.body["metadata"]["filename"]).toString('utf-8');
-	var filehash = "0x"+Buffer.from(req.body["metadata"]["filehash"]).toString('hex').toUpperCase();
+	var filehash = req.body["metabody"]["filehash"];
 	var sign_v = "0x"+Buffer.from(req.body["metadata"]["sign_v"], "base64").toString('hex').toUpperCase();
 	var sign_r = "0x"+Buffer.from(req.body["metadata"]["sign_r"], "base64").toString('hex').toUpperCase();
 	var sign_s = "0x"+Buffer.from(req.body["metadata"]["sign_s"], "base64").toString('hex').toUpperCase();
