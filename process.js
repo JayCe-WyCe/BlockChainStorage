@@ -71,8 +71,9 @@ async function authenticate(addr, signatureObj){
 	var authenticated = false;
 	var ret_addr = await contractAPI.methods.VerifyMessage(signatureObj["hashedMessage"], signatureObj["v"], signatureObj["r"], signatureObj["s"]).call();
 	// check if the user owns this account
-	console.log(`Attempting authentication... ${addr} === ${ret_addr} ? ${addr===ret_addr}`);
-	if(addr===ret_addr){
+	console.log("This is the authentication. This message should appear BEFORE the addUser function!");
+	console.log(`Attempting authentication... ${addr} === ${ret_addr} ? ${parseInt(addr, 16)===parseInt(ret_addr, 16)}`);
+	if(parseInt(addr, 16)===parseInt(ret_addr, 16)){
 		authenticated = true;
 	}
 	console.log(authenticated);
@@ -255,6 +256,7 @@ async function addUser(userAddr, merkleHash, hasFile, signatureObj) {
 }
 
 async function removeUser(userAddr, signatureObj) {
+	console.log("[func] removeUser: Attempting to remove the user...")
 	const pendingTx = contractAPI.methods.removeUser(userAddr, testing);
 	const resultTx = await sendTx(privKey, pendingTx);
 	return resultTx;

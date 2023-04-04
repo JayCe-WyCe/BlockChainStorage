@@ -46,7 +46,22 @@ async function add_user(req, res){
 	if(authenticate_valid){
 		successful_insert = process.insert_user(id);
 // 		When we add the user he wont have any file on the storage so we need to set his merkle root as empty.
-		process.addUser(id, 0x0, identifier)
+		try {
+			// please remove the below 2 lines when not in test mode
+			const TEST_MODE = true;
+			if(TEST_MODE){ process.removeUser(id, identifier)};
+
+			process.addUser(id, 0x0, identifier)
+		} catch (err) {
+			console.log("WARNING: Attempting to add a user that already exists!");
+			try {
+				var user_info = process.getUser(id);
+				console.log(`More information: ${user_info}`);
+			} catch (err2) {
+				console.log(`This is not supposed to happen! (This is just how life works) ${err2}`);
+			}
+		}
+
 	}
 	res.send(successful_insert);
 };
