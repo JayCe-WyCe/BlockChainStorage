@@ -48,14 +48,14 @@ async function add_user(req, res){
 		try {
 			// please remove the below 2 lines when not in test mode
 			const TEST_MODE = true;
-			if(TEST_MODE){ process.removeUser(id, identifier)};
+			if(TEST_MODE){ await process.removeUser(id, identifier)};
 
-			process.addUser(id, 0x0, identifier)
+			await process.addUser(id, 0x0, identifier)
 		} catch (err) {
 			console.log("WARNING: Attempting to add a user that already exists!");
 			try {
-				var user_info = process.getUser(id);
-				console.log(`More information: ${user_info}`);
+				var user_info = await process.getUser(id);
+				console.log(`More information: ${JSON.stringify(user_info)}`);
 			} catch (err2) {
 				console.log(`This is not supposed to happen! (This is just how life works) ${err2}`);
 			}
