@@ -37,7 +37,7 @@ function add_user(req, res){
 	var sign_s = "0x"+Buffer.from(req.body["metadata"]["sign_s"], "base64").toString('hex');
 
 	// create the new user account extracted from the request
-	var identifier = {"id_hash":id_hash, "v":sign_v, "r":sign_r, "s":sign_s };
+	var identifier = {"hashedMessage":id_hash, "v":sign_v, "r":sign_r, "s":sign_s };
 	console.log(`add_user function called. looking at values from the request:`);
 	console.log(`The values from request: ${id} ${id_hash} and ${sign_v}, ${sign_r}, ${sign_s}`);
 
@@ -45,9 +45,11 @@ function add_user(req, res){
 	var successful_insert = false;
 	if(authenticate_valid){
 		successful_insert = process.insert_user(id);
+// 		When we add the user he wont have any file on the storage so we need to set his merkle root as empty.
+		process.addUser(id,"",identifier)
 	}
 	res.send(successful_insert);
-}
+};
 
 function upload_file(req, res, next){
 	console.log(`\nUpload file API is called.\n`);
@@ -61,7 +63,7 @@ function upload_file(req, res, next){
 	var filecontent = req.body["filecontent"];
 
 	// the user signs the file, and so we check that the user actually owns the file
-	var identifier = {"filehash":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
+	var identifier = {"hashedMessage":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
 	//var contents = req.file.buffer;
 	console.log(`filename ${filename}, filehash ${filehash}, v ${sign_v}, r ${sign_r}, s ${sign_s}`);
 	var authenticate_valid = process.authenticate(id, identifier);
@@ -69,9 +71,10 @@ function upload_file(req, res, next){
 		console.log(`The authentication is valid, we can now store the contents: ${filecontent}`);
 		try {
 			console.log(`This is a test to save a file... replace this with more complex code!`);
+			process.setUserMerkleData(id,filename,identifier);
 			process.manage_upload(id, filename, filehash, filecontent);	
 		} catch (err) {
-			console.log(`This is just a test to save the file! Why did it fail!? ${err}`);
+			console.log(`This is just a test to save the file! Why did it fail!? ${err.stack}`);
 		}
 		res.send();
 	} else {
@@ -80,8 +83,56 @@ function upload_file(req, res, next){
 
 }
 
+// Logic to handke the download of the file.
+function download_file(req, res, next)
+{
+	console.log(`\Download file API is called.\n`);
+	var id = req.body["metadata"]["id"];
+	var filename = req.body["metadata"]["filename"];
+	var filehash = req.body["metadata"]["filehash"];
+	var sign_v = req.body["metadata"]["sign_v"];
+	var sign_r = req.body["metadata"]["sign_r"];
+	var sign_s = req.body["metadata"]["sign_s"];
+
+
+	// the user signs the file, and so we check that the user actually owns the file
+	var identifier = {"hashedMessage":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
+	//var contents = req.file.buffer;
+	console.log(`filename ${filename}, filehash ${filehash}, v ${sign_v}, r ${sign_r}, s ${sign_s}`);
+	var authenticate_valid = process.authenticate(id, identifier);
+	if(authenticate_valid){
+		console.log(`The authentication is valid, we can now download the file: ${filename}`);
+		process.authenticateFileAccess(id,filename).then(function(root){console.log(root)
+		if(root)
+		{
+			var content=process.manageDownload(id,filename,identifier)
+			res.send(content)
+		}
+		else
+		{
+			console.log("User does not have access")	
+		} })
+		
+
+			
+	} else {
+		res.send(authenticate_valid);
+	}
+
+};
+
+
+
+
+function fin(req, res){
+	console.log(`Hi I am just here to give closure`);
+	res.send("OK!");
+}
+
+
 
 // Code to get the server running
 app.post("/add_user", add_user);
 app.post("/upload_file", upload_file);
+app.post("/download_file", download_file);
 app.listen(server_port, server_start);
