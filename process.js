@@ -69,7 +69,7 @@ if(existing_file===null || existing_file===undefined )
 
 async function authenticate(addr, signatureObj){
 	var authenticated = false;
-	const ret_addr = await contractAPI.methods.VerifyMessage(signatureObj["hashedMessage"], signatureObj["v"], signatureObj["r"], signatureObj["s"]).call();
+	var ret_addr = await contractAPI.methods.VerifyMessage(signatureObj["hashedMessage"], signatureObj["v"], signatureObj["r"], signatureObj["s"]).call();
 	// check if the user owns this account
 	console.log(`Attempting authentication... ${addr} === ${ret_addr} ? ${addr===ret_addr}`);
 	if(addr===ret_addr){
@@ -247,7 +247,7 @@ async function sendTx(privKey, unsignedTx) {
 }
 
 async function addUser(userAddr, merkleHash, hasFile, signatureObj) {
-	console.log("addUser function called for web3 stuff... (I suspect it fails here)");
+	console.log("addUser function called for web3 stuff... this should NOT be called before the authenticate function!");
 	console.log(`These are the values being passed in: userAddr ${userAddr}, merkleHash ${merkleHash}, signatureObj ${JSON.stringify(signatureObj)}`);
 	const pendingTx = contractAPI.methods.addUser(userAddr, merkleHash, hasFile, signatureObj);
 	const resultTx = await sendTx(privKey, pendingTx);
