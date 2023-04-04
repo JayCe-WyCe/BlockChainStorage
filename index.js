@@ -43,7 +43,7 @@ async function add_user(req, res){
 	var authenticate_valid = await process.authenticate(id, identifier);
 	var successful_insert = false;
 	if(authenticate_valid){
-		successful_insert = process.insert_user(id);
+		successful_insert = await process.insert_user(id);
 		if(successful_insert) {
 			// When we add the user he wont have any file on the storage so we need to set his merkle root as empty.
 			try {
