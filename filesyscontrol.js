@@ -165,7 +165,7 @@ async function create_user_entry(user_id){
 	// check that the user exists in the system
 	var existing = await check_user_exists(user_id, metatree);
 	console.log(`Attempting to create a new user, does the user ${user_id} exist? ${existing}`);
-	var created = true;
+	var created = false;
 	if(!existing){
 		// add a new user if it does not already exist
 		try {
@@ -175,10 +175,11 @@ async function create_user_entry(user_id){
 							"files": []};
 			metatree.push(user_new);
 			fs.writeFileSync(filename_metatree, JSON.stringify(metatree));
+			created = true;
 		} catch (err) {
 			// insertion failed, so treat it as failed
 			console.log(`Failed to write to ${filename_metatree}. Error: ${err}`);
-			created = false;
+
 		}
 	}
 
