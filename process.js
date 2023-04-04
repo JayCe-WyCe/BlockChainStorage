@@ -171,15 +171,23 @@ async function upload_existing(userAddr,filename,fileContent){
 	console.log(fileBuckets)
 	for(var i=0;i<fileBuckets.length;i++)
 	{
-		var bucket=fileBuckets[i]
-		var bucket_name=bucket['bucket']
-		var bucket_key=bucket['keyfile']
-		var bucket_project_id=bucket["project"]
+		var bucket=fileBuckets[i];
+		var bucket_name=bucket['bucket'];
+		var bucket_key=bucket['keyfile'];
+		var bucket_project_id=bucket["project"];
 		var bucket_provider={
   			projectId: bucket_project_id,
   			keyFilename: bucket_key
 		};
-		googlebucket.gc_uploadFile(bucket_name,userAddr,filename,fileContent,bucket_provider)	
+
+		try {
+			// don't want to append file, so delete the old one and replace.
+			googlebucket.gc_deleteFile(bucket_name,userAddr,filename,bucket_provider);
+			googlebucket.gc_uploadFile(bucket_name,userAddr,filename,fileContent,bucket_provider);
+		} catch (err) {
+			console.log(`Failed to replace existing file... Error reason:\n{err}`);
+		}
+
 	}
 }
 
