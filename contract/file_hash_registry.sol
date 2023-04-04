@@ -12,13 +12,12 @@ contract file {
         _;
     }
 
-    mapping(address => uint256) public files;
-    mapping(address => mapping(address => permInfo[])) public filesPerm;
+    mapping(address => userFileInfo) public files;
 
-    struct permInfo {
-        address permUserAddr;
+    struct userFileInfo {
         uint256 merkleHash;
-        uint8 perm;
+        bool hasFile;
+        bool reg;
     }
 
     struct signature {
@@ -33,66 +32,40 @@ contract file {
         userCounter = 0;
     }
 
-    function getUserPermInfoLength(address ownerAddr, address permUserAddr) external view returns (uint) {
-        return filesPerm[ownerAddr][permUserAddr].length;
-    }
-
     function VerifyMessage(bytes32 hashedMessage, uint8 v, bytes32 r, bytes32 s) public pure returns (address) {
         return ecrecover(hashedMessage, v, r, s);
     }
 
-    function addUser(address userAddr, uint256 merkleHash, signature memory signArr) external _OwnerOnly returns (uint) {
+    function addUser(address userAddr, uint256 merkleHash, bool hasFile, signature memory signArr) external _OwnerOnly returns (uint) {
         require(VerifyMessage(signArr.hashedMessage, signArr.v, signArr.r, signArr.s) == userAddr, "Invalid Signature");
-        require(files[userAddr] == 0, "This user already exist");
-        files[userAddr] = merkleHash;
-        require(files[userAddr] != 0, "failed to add user");
+        require(files[userAddr].reg == false, "This user already exist");
+        files[userAddr] = userFileInfo(merkleHash, hasFile, true);
+        require(files[userAddr].reg == true, "failed to add user");
+        userCounter++;
         return 0;
     }
 
     function removeUser(address userAddr, signature memory signArr) external _OwnerOnly returns (uint) {
         require(VerifyMessage(signArr.hashedMessage, signArr.v, signArr.r, signArr.s) == userAddr, "Invalid Signature");
-        require(files[userAddr] != 0, "This user hasn't registered in the system");
-        files[userAddr] = 0x0;
-        require(files[userAddr] == 0, "failed to remove user");
+        require(files[userAddr].reg == true, "This user hasn't registered in the system");
+        files[userAddr] = userFileInfo(0x0, false, false);
+        require(files[userAddr].reg == false, "failed to remove user");
+        userCounter--;
+        return 0;
+    }
+
+    function changeHaveFileStatus(address userAddr, bool hasFile, signature memory signArr) external _OwnerOnly returns (uint) {
+        require(VerifyMessage(signArr.hashedMessage, signArr.v, signArr.r, signArr.s) == userAddr, "Invalid Signature");
+        files[userAddr].hasFile = hasFile;
+        require(files[userAddr].hasFile == hasFile, "failed to update user file's status");
         return 0;
     }
 
     function updateHash(address userAddr, uint256 merkleHash, signature memory signArr) public _OwnerOnly returns (uint) {
         require(VerifyMessage(signArr.hashedMessage, signArr.v, signArr.r, signArr.s) == userAddr, "Invalid Signature");
-        files[userAddr] = merkleHash;
-        require(files[userAddr] == merkleHash, "failed to update file merkle hash");
+        require(files[userAddr].reg != true, "This user hasn't registered in the system");
+        files[userAddr].merkleHash = merkleHash;
+        require(files[userAddr].merkleHash == merkleHash, "failed to update file merkle hash");
         return 0;
-    }
-
-    function addPerm(address filesOwnerAddr, permInfo memory permInfoUser, signature memory signArr) public _OwnerOnly returns (uint) {
-        require(VerifyMessage(signArr.hashedMessage, signArr.v, signArr.r, signArr.s) == filesOwnerAddr, "Invalid Signature");
-        uint256 permListLength = filesPerm[filesOwnerAddr][permInfoUser.permUserAddr].length;
-        filesPerm[filesOwnerAddr][permInfoUser.permUserAddr].push(permInfoUser);
-        require(filesPerm[filesOwnerAddr][permInfoUser.permUserAddr].length == permListLength + 1, "failed to update add permission");
-        return 0;
-    }
-
-    function addPerm(address filesOwnerAddr, permInfo[] memory permInfoUserList, signature memory signArr) public _OwnerOnly returns (uint) {
-        require(VerifyMessage(signArr.hashedMessage, signArr.v, signArr.r, signArr.s) == filesOwnerAddr, "Invalid Signature");
-        for(uint i=0; i<permInfoUserList.length; i++) {
-            addPerm(filesOwnerAddr, permInfoUserList[i], signArr);
-        }
-        return permInfoUserList.length;
-    }
-
-    function removePerm(address filesOwnerAddr, permInfo memory permInfoUser, signature memory signArr) public _OwnerOnly returns (uint) {
-        require(VerifyMessage(signArr.hashedMessage, signArr.v, signArr.r, signArr.s) == filesOwnerAddr, "Invalid Signature");
-        uint256 permListLength = filesPerm[filesOwnerAddr][permInfoUser.permUserAddr].length;
-        filesPerm[filesOwnerAddr][permInfoUser.permUserAddr].push(permInfoUser);
-        require(filesPerm[filesOwnerAddr][permInfoUser.permUserAddr].length == permListLength + 1, "failed to update add permission");
-        return 0;
-    }
-
-    function testSign(bytes memory strSign) external pure returns (bytes32) {
-        return keccak256(strSign);
-    }
-
-    function testSign(string memory strSign) external pure returns (bytes32) {
-        return keccak256(abi.encodePacked(strSign));
     }
 }

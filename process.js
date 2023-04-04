@@ -21,10 +21,10 @@ var privKey = keys[0];
 var wallet = web3.eth.accounts.privateKeyToAccount(privKey);
 var ownerAddr = wallet.address;
 
-const fileAbiPath = "fileImports/filePermAbi.json";
+const fileAbiPath = "fileImports/filePermAbiLatest.json";
 const fileAbi = JSON.parse(fs.readFileSync(fileAbiPath).toString());
 
-const contractAddr = "0x858b8D0C5C87c1b77a66B21e7aB54Fc51F5e16A6";
+const contractAddr = "0x308f37D38DD6af6fCF22f71d4CFB0153008f2449";
 const contractAPI = new web3.eth.Contract(fileAbi, contractAddr);
 
 /*Function: add a new user to the user json*/
@@ -246,12 +246,24 @@ async function sendTx(privKey, unsignedTx) {
 	return await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 }
 
-async function addUser(userAddr, merkleHash, signatureObj) {
+async function addUser(userAddr, merkleHash, hasFile, signatureObj) {
 	console.log("addUser function called for web3 stuff... (I suspect it fails here)");
 	console.log(`These are the values being passed in: userAddr ${userAddr}, merkleHash ${merkleHash}, signatureObj ${JSON.stringify(signatureObj)}`);
-	const pendingTx = contractAPI.methods.addUser(userAddr, merkleHash, signatureObj);
+	const pendingTx = contractAPI.methods.addUser(userAddr, merkleHash, hasFile, signatureObj);
 	const resultTx = await sendTx(privKey, pendingTx);
 	return resultTx;
+}
+
+async function removeUser(userAddr, signatureObj) {
+	const pendingTx = contractAPI.methods.removeUser(userAddr, testing);
+	const resultTx = await sendTx(privKey, pendingTx);
+	return resultTx;
+}
+
+async function getUser(UserAddr) {
+	const userVal = await contractAPI.methods.files(ownerAddr).call();
+	console.log(userVal['merkleHash'], userVal['hasFile'], userVal['reg']);
+	return userVal;
 }
 
 // This method gets the user merkle tree root from blockchain
