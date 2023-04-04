@@ -1,4 +1,3 @@
-
 // Import the Google Cloud client library
 const {Storage} = require('@google-cloud/storage');
 
@@ -7,7 +6,7 @@ const {Storage} = require('@google-cloud/storage');
 async function gc_uploadFile(bucketName, id, fileName, fileData, bucket_provider) {
 
 	var storage = new Storage(bucket_provider);
-
+	console.log("ayush_log:",bucket_provider);
 	const bucket = storage.bucket(bucketName);
 	const file = bucket.file(`${fileName}-${id}`);
 

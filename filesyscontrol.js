@@ -19,11 +19,15 @@ async function load_tree(){
 async function getFileBuckets(userAddr,fileName)
 {
 	var metatree = await load_tree();
+console.log("user metatree",metatree)
 	var userIndex = await get_user_by_id(userAddr,metatree);
+	console.log("Ayush User index",userIndex)
 	if(userIndex!=null && userIndex!=-1)
 	{
 		var fileIndex = await get_file_index(metatree[userIndex],fileName);
-		var fileBuckets=metatree[userIndex]['files'][fileIndex]['diskbuckets'];
+		console.log("Ayush file index",fileIndex)
+		var fileBuckets=metatree[userIndex]['files'][fileIndex]['diskbucket'];
+		console.log("Ayush file bucket",fileBuckets)
 		return fileBuckets
 
 	}
@@ -52,14 +56,13 @@ async function setMerkleTree(userAddr,merkleTree)
 
 
 // function to add an entry into the metatree when a new file is being inserted
-async function create_file_entry(id, filename, filenamehash, size, diskbuckets){
+async function create_file_entry(id, filename, filenamehash,  diskbuckets){
 	// we may wish to create more args after discussion...
-	console.log(`Inside filesyscontrol, creating file entry using id ${id}, filename ${filename}, diskpath ${diskpath}`);
+	console.log(`Inside filesyscontrol, creating file entry using id ${id}, filename ${filename}`);
 	var metatree = await load_tree();
 	var users_total = metatree.length;
 	var file_obj = {"filename": filename,				// string
-					"filenamehash": filenamehash,		// hash
-					"filesize": size,					// int
+					"filenamehash": filenamehash,		// hash					// int
 					"diskbucket": diskbuckets};			// array
 	var user_index = await get_user_by_id(id, metatree);
 	console.log(`The user index is ${user_index}`);
@@ -124,7 +127,10 @@ async function get_user_by_id(id, metatree){
 	var user = -1;
 	var users_total = metatree.length;
 	for(let i=0; i<users_total; i++){
-		if(metatree[i]["id"]===id){
+	console.log("Ayush get user by id",id,metatree[i]['id'])
+
+		if(metatree[i]["id"]==id){
+
 			user = i;
 			break;
 		}
@@ -135,11 +141,12 @@ async function get_user_by_id(id, metatree){
 
 // function to return the position of the current file index in the array
 async function get_file_index(user, filename){
+	console.log("get_file_index",user,filename)
 	var user_files = user["files"];
 	var file_count = user_files.length;
 	var file_index = -1;
 	for(let i=0; i<file_count; i++){
-		if(user_files[i]===filename){
+		if(user_files[i]['filename']===filename){
 			file_index = i;
 			break;
 		}

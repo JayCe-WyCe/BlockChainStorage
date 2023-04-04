@@ -90,7 +90,7 @@ async function manage_upload(id, filename, filenamehash, filecontent){
 		// the file is new and so a new record needs to be inserted
 		console.log(`The file does not already exist, so we have to upload it as a new file!`);
 		var replication_factor=2
-		var diskbucket = upload_new(id, filenamehash, filename,replication_factor,filecontent);
+		var diskbucket = upload_new(id, filename,filenamehash,replication_factor,filecontent);
 		//fs.writeFileSync(diskpath+"/"+filename, filecontent);
 	} else {
 		// the file is already in the system, so only need to save the file
@@ -100,7 +100,7 @@ async function manage_upload(id, filename, filenamehash, filecontent){
 		// I added one auxillary function to help :) It is called update_file_metadata()
 		// The existing_file variable above is actually the file, so you can modify the attributes directly
 		// (refer to filesyscontrol.js) after modifying the values, use update_file_metadata() to update metatree
-		upload_existing();
+		await upload_existing(id,filename,filecontent);
 
 		// existing_file is a file metadata object, which contains filename, diskpath, and collaborators etc.
 		console.log(`The file is not new, so we just need to save it again with no changes to metadata`);
@@ -166,8 +166,9 @@ async function authenticateFileAccess(userAddr,filename)
 
 
 		
-function upload_existing(userAddr,filename,fileContent){
-        var fileBuckets= filesyscontrol.getFileBuckets(userAddr,filename)
+async function upload_existing(userAddr,filename,fileContent){
+        var fileBuckets= await filesyscontrol.getFileBuckets(userAddr,filename)
+	console.log(fileBuckets)
 	for(var i=0;i<fileBuckets.length;i++)
 	{
 		var bucket=fileBuckets[i]
@@ -178,7 +179,7 @@ function upload_existing(userAddr,filename,fileContent){
   			projectId: bucket_project_id,
   			keyFilename: bucket_key
 		};
-		googlebucket.gc_uploadFile(bucket_name,userAddr,filename,bucket_provider,fileContent)	
+		googlebucket.gc_uploadFile(bucket_name,userAddr,filename,fileContent,bucket_provider)	
 	}
 }
 
@@ -209,7 +210,7 @@ function upload_new(id, filename, filenamehash, replication_factor,filecontent) 
   			projectId: bucket_project_id,
   			keyFilename: bucket_key
 		};
-			googlebucket.gc_uploadFile(bucket_name,userAddr,filename,bucket_provider,filecontent)
+			googlebucket.gc_uploadFile(bucket_name,id,filename,filecontent,bucket_provider)
             console.log(`The bucket is ${diskbucket["project"]}, ${diskbucket["bucket"]}, ${diskbucket["keyfile"]}`);
             diskbuckets.push(diskbucket);
         }
@@ -221,7 +222,7 @@ function upload_new(id, filename, filenamehash, replication_factor,filecontent) 
         console.log("This should not happen! Someone tampered with the environment and deleted it!");
     }
 
-    console.log(`After processing, the disk path is ${diskpath}`);
+    console.log(`After processing, the disk path is ${diskbuckets}`);
     return diskbuckets;
 }
 
