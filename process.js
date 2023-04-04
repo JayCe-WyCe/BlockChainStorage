@@ -83,9 +83,9 @@ async function authenticate(addr, signatureObj){
 }
 
 // function to deal with 1. updating metadata, and 2. saving the actual file
-function manage_upload(id, filename, filenamehash, filecontent){
+async function manage_upload(id, filename, filenamehash, filecontent){
 	console.log(`manage_upload called with parameters id ${id}, filename ${filename}, filecontent ${filecontent}`);
-	var existing_file = filesyscontrol.check_file_existence(id, filename);
+	var existing_file = await filesyscontrol.check_file_existence(id, filename);
 	if(existing_file===null){
 		// the file is new and so a new record needs to be inserted
 		console.log(`The file does not already exist, so we have to upload it as a new file!`);
