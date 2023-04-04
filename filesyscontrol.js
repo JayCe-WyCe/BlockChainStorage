@@ -160,7 +160,7 @@ async function check_user_exists(id, metatree){
 
 // function to create a brand new user in the system
 async function create_user_entry(user_id){
-	var metatree = load_tree();
+	var metatree = await load_tree();
 
 	// check that the user exists in the system
 	var existing = await check_user_exists(user_id, metatree);
