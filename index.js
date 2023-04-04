@@ -30,11 +30,11 @@ function add_user(req, res){
 	// id: a signed hash of the ethereum address
 	// v, r, s: public key
 	console.log("Testing add_user function API call");
-	var id = req.body["id"];
-	var id_hash = req.body["id_hash"];
-	var sign_v = req.body["sign_v"];
-	var sign_r = req.body["sign_r"];
-	var sign_s = req.body["sign_s"];
+	var id = "0x"+Buffer.from(req.body["metadata"]["id"], "base64").toString('hex');
+	var id_hash = "0x"+Buffer.from(req.body["metadata"]["id_hash"], "base64").toString('hex');
+	var sign_v = "0x"+Buffer.from(req.body["metadata"]["sign_v"], "base64").toString('hex');
+	var sign_r = "0x"+Buffer.from(req.body["metadata"]["sign_r"], "base64").toString('hex');
+	var sign_s = "0x"+Buffer.from(req.body["metadata"]["sign_s"], "base64").toString('hex');
 
 	// create the new user account extracted from the request
 	var identifier = {"id_hash":id_hash, "v":sign_v, "r":sign_r, "s":sign_s };
@@ -51,12 +51,12 @@ function add_user(req, res){
 
 function upload_file(req, res, next){
 	console.log(`\nUpload file API is called.\n`);
-	var id = req.body["metadata"]["id"];
-	var filename = req.body["metadata"]["filename"];
-	var filehash = req.body["metadata"]["filehash"]; // note currently set to hash of filename, not content
-	var sign_v = req.body["metadata"]["sign_v"];
-	var sign_r = req.body["metadata"]["sign_r"];
-	var sign_s = req.body["metadata"]["sign_s"];
+	var id = atob(req.body["metadata"]["id"]);
+	var filename = atob(req.body["metadata"]["filename"]);
+	var filehash = atob(req.body["metadata"]["filehash"]); // note currently set to hash of filename, not content
+	var sign_v = atob(req.body["metadata"]["sign_v"]);
+	var sign_r = atob(req.body["metadata"]["sign_r"]);
+	var sign_s = atob(req.body["metadata"]["sign_s"]);
 
 	var filecontent = req.body["filecontent"];
 
