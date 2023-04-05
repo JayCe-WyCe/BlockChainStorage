@@ -1,6 +1,9 @@
 from bridge import *
 import sys
 
+# To run a test:
+# python testdriver.py [1|2|3] [|filename|file] [|filename|]
+
 argv = sys.argv
 
 ip = "35.194.62.230"
