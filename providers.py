@@ -7,15 +7,13 @@
 # we need to add this information to bucketlist.json
 
 # usage:
-# python3 providers.py <append|remove> <provider public address> <project> <bucket number> <keyfile path|null>
+# python3 providers.py <append|remove> <provider public address> <project> <bucket number> <bucket size GB> <keyfile path|null>
 
 import json
 import sys
 
-bucketlist = "bucketlist"
-argv = sys.argv[1]
-funcs = {"append":append_provider,
-         "remove":remove_provider}
+bucketlist = "bucketlist.json"
+argv = sys.argv
 
 def append_provider(sargv, jfile):
     # retrieve the google cloud project and the bucket identifier
@@ -23,15 +21,19 @@ def append_provider(sargv, jfile):
     provider_id = sargv[2]
     project = sargv[3]
     bucket_num = sargv[4]
-    keyfile_path = sargv[5]
-    print(f"Appending ({provider_id}, {project}, {bucket_num}, {keyfile_path})")
+    bucket_size = sargv[5]
+    keyfile_path = sargv[6]
+    print(f"Appending ({provider_id}, {project}, {bucket_num}, {bucket_size}, {keyfile_path})")
     # load the bucket list file
     jdata = json.load(jfile)
+    print(f"Test jdata is : {jdata}")
     # create a new provider entry
-    provider_new = {"provider":provider_id, "project":project, "bucket":bucket_num, "keyfile":keyfile_path}
+    # NOTE: "free" keeps track of free space. We want to subtract this number whenever adding a file, and add when freeing.
+    provider_new = {"provider":provider_id, "project":project, "bucket":bucket_num, "size":bucket_size, "free":bucket_size, "keyfile":keyfile_path}
     # add the new provider (of cloud disk storage) and save the file
     jdata.append(provider_new)
-    json.dump(jdata, jfile)
+    print(f"jdata is now: {jdata}")
+    json.dump(jdata, jfile, indent=4)
     jfile.close()
 
 def remove_provider(sargv, jfile):
@@ -49,10 +51,15 @@ def remove_provider(sargv, jfile):
     # save the file
     json.dump(jdata, jfile)
     jfile.close()
-     
+
+funcs = {"append":append_provider,
+         "remove":remove_provider}
+   
 try:
+    print(f"Debug: opening the file bucketlist")
     jfile = open(bucketlist, 'r+')
     cmd = argv[1]
+    print(f"The command is {cmd}, file is {jfile}")
     funcs[cmd](argv, jfile)
 except Exception as err:
     print(f"Failed to run the command! {err}")

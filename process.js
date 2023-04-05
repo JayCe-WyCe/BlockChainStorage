@@ -24,7 +24,7 @@ var ownerAddr = wallet.address;
 const fileAbiPath = "fileImports/filePermAbiLatest.json";
 const fileAbi = JSON.parse(fs.readFileSync(fileAbiPath).toString());
 
-const contractAddr = "0x308f37D38DD6af6fCF22f71d4CFB0153008f2449";
+const contractAddr = "0x0F83cEdbb4181DE42A59729ce788B6f8523E0DBb";
 const contractAPI = new web3.eth.Contract(fileAbi, contractAddr);
 
 /*Function: add a new user to the user json*/
@@ -214,9 +214,9 @@ function upload_new(id, filename, filenamehash, replication_factor,filecontent) 
 			var bucket_key=diskbucket['keyfile']
 			var bucket_project_id=diskbucket["project"]
 			var bucket_provider={
-  			projectId: bucket_project_id,
-  			keyFilename: bucket_key
-		};
+				projectId: bucket_project_id,
+				keyFilename: bucket_key
+			};
 			googlebucket.gc_uploadFile(bucket_name,id,filename,filecontent,bucket_provider)
             console.log(`The bucket is ${diskbucket["project"]}, ${diskbucket["bucket"]}, ${diskbucket["keyfile"]}`);
             diskbuckets.push(diskbucket);
@@ -301,6 +301,39 @@ async function updateUserHash(userAddr, merkleHash) {
 	});
 	const resultTx = await sendTx(privKey, pendingTx);
 	return resultTx;
+}
+
+// function for updating metadata across all google cloud nodes
+async function synchronize_metadata(WHAT, DO, I, ADD, HERE){
+	// get the user from the metatree
+	console.log(`[synchronize_metadata] Running procedure to update metadata across all buckets`);
+	var user_central = await filesyscontrol.retrieve_user_record();
+	console.log(`[synchronize_metadata] Sending ${JSON.stringify(user_central["files"])} for processing`);
+	var ubuckets = await filesyscontrol.get_bucket_union(user_central["files"]);
+	console.log(`[synchronize_metadata] Retrieved buckets--> ${JSON.stringify(user_diskbuckets)}`);
+	var bucket_count = ubuckets.length;
+	var user_updated = user_central;
+	for(let i=0; i<bucket_count; i++){
+		// we will now go through each bucket and get the metadata file
+		var gc_readFile(bucketName, id, fileName, bucket_provider)
+		var gc_metadatafile = await gc_readFile(ubuckets[i], id, `__metadata-${id}__.json`, WHAT_DO_I_PUT_HERE);
+		if(gc_metadatafile!==null) {
+			var gc_user = JSON.stringify(gc_metadatafile);
+			console.log(`[synchronize_metadata] The user retrieved from bucket ${ubuckets[i]} is ${gc_user}`);
+			// we want to get the latest version of the file... this includes the case 
+			// where central node loses the metatree.json file and needs help rebuilding
+			if(gc_user["updated"] > user_updated["updated"]){
+				gc_updated = gc_user;
+			}
+		}
+	}
+
+	// we can now push this file across all nodes
+	for(let i=0; i<bucket_count; i++){
+		// push updates of gc_updated to buckets
+		console.log(`[synchronize_metadata] pushing to bucket...`);
+	}
+	
 }
 
 // export all the functions.

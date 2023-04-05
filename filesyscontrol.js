@@ -127,8 +127,7 @@ async function get_user_by_id(id, metatree){
 	var user = -1;
 	var users_total = metatree.length;
 	for(let i=0; i<users_total; i++){
-	console.log("Ayush get user by id",id,metatree[i]['id'])
-
+		console.log("Ayush get user by id",id,metatree[i]['id'])
 		if(metatree[i]["id"]==id){
 
 			user = i;
@@ -137,6 +136,39 @@ async function get_user_by_id(id, metatree){
 	}
 
 	return user;
+}
+
+// function to retrieve the user record from the metatree
+async function retrieve_user_record(id){
+	var metatree = await load_tree();
+	var user_metadata = null;
+	var user_id = await get_user_by_id(id);
+	console.log(`[retrieve_user_record] The user_id retrieved is ${user_id}, id input is ${id}`);
+	if(user_id!==-1){
+		user_metadata = metatree[user_id];
+	}
+	return user_metadata
+}
+
+// given a list of files owned by a user, get a list of all unique buckets used by that user.
+async function get_bucket_union(filelist){
+	var filecount = filelist.length;
+	var bucket_union = [];
+	console.log(`[get_bucket_union] Processing filelist with a length of ${filecount}`);
+	for(let i=0; i<filecount; i++){
+		var filebuckets = filelist[i]["diskbucket"];
+		var fbcount = filebuckets.length;
+		for(let j=0; j<fbcount; j++){
+			if(!bucket_union.includes(filebuckets[j])){
+				console.log(`[get_bucket_union] Discovered ${JSON.stringify(filebuckets[j])} not in the list, adding...`);
+				bucket_union.push();
+			}
+		}
+		
+	}
+	console.log(`[get_bucket_union] Returning control to caller with list--> ${bucket_union}...`);
+	return bucket_union;
+
 }
 
 // function to return the position of the current file index in the array
@@ -200,4 +232,6 @@ module.exports = {"create_user_entry":create_user_entry,
 				  "check_file_existence":check_file_existence,
 				  "getMerkleTree":getMerkleTree,
 				  "setMerkleTree":setMerkleTree,
-				  "getFileBuckets":getFileBuckets};
+				  "getFileBuckets":getFileBuckets,
+				  "retrieve_user_record":retrieve_user_record,
+				  "get_bucket_union":get_bucket_union};

@@ -48,7 +48,7 @@ async function add_user(req, res){
 			// When we add the user he wont have any file on the storage so we need to set his merkle root as empty.
 			try {
 				// please remove the below 2 lines when not in test mode
-				const TEST_MODE = true;
+				const TEST_MODE = false;
 				if(TEST_MODE){ await process.removeUser(id, identifier)};
 				console.log("Adding user now...");
 				await process.addUser(id, 0x0, false, identifier)

@@ -11,7 +11,7 @@ json.dump([], manager)
 manager.close()
 
 # set up a file for populating buckets u sed for storage.
-keyfilepath = "keyfiles"
+keyfilepath = "keyfiles.json"
 os.mkdir(keyfilepath)
 bucketlist = open("bucketlist.json", "w")
 buckets = []
