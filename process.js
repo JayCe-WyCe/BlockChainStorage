@@ -1,8 +1,4 @@
-//process.js
-/*
-	This javascript file is used as utility for the main server script to abstract
-	away the code clutter. Note that this is simply for auxillary functions.
-*/
+
 const fs = require('fs');
 const StandardMerkleTree = require( "@openzeppelin/merkle-tree");
 
@@ -36,91 +32,119 @@ async function insert_user(id, identifier){
 
 // This function will create the merkle tree for user, and then make the call the the end to update/add the merkle tree in metadata as well as on the blockchain.
 // updateUserHash is the contract function used for updating the blockchain data.
-function setUserMerkleData(userAddr,fileName,identifier)
+async function setUserMerkleData(userAddr,fileName,identifier)
 {
+var user_check=await getUserRootBC(userAddr)
+console.log("Inside [setUserMerkleData], printing user root:", user_check)
 var fileName_list=[]
-console.log(`Testing log:  ${fileName}`)
-var existing_file = filesyscontrol.check_file_existence(userAddr, fileName);
+var existing_file = await filesyscontrol.check_file_existence(userAddr, fileName);
 if(existing_file===null || existing_file===undefined )
 {
-	merkle_json=filesyscontrol.getMerkleTree(userAddr)
+	merkle_json=await filesyscontrol.getMerkleTree(userAddr)
 	if(merkle_json !== null && merkle_json!= undefined && merkle_json!== '')
 	{
-		console.log("loading tree",JSON.parse(JSON.stringify(merkle_json)))
 		const userTree=StandardMerkleTree.StandardMerkleTree.load(JSON.parse(merkle_json))
 		for (const [i, v] of userTree.entries()) 
 		{
 			fileName_list.push(v)	
-			fileName_list.push([fileName])
 		}	
 	}
 	fileName_list.push([fileName])
-	console.log(`Merkle tree is being built using  ${fileName_list}`)
+	console.log(`[setUserMerkleData] Merkle tree is being built using  ${fileName_list}`)
 	const tree=StandardMerkleTree.StandardMerkleTree.of(fileName_list,['string'])
 
 	const root=tree.root
-	console.log("merkle root:",root)
-	filesyscontrol.setMerkleTree(userAddr,tree)
-	updateUserHash(userAddr,root,identifier)
+	console.log("[setUserMerkleData] merkle root:",root)
+	await filesyscontrol.setMerkleTree(userAddr,tree)
+	await updateUserHash(userAddr,root,identifier)
 	
 	
 }
 };	
 
+async function   updateMerkleAfterDelete(userAddr,identifier,filename)
+{
+	var user_check=await getUserRootBC(userAddr)
+	console.log("Inside [updateMerkleAfterDelete], printing user root:", user_check)
+	var fileName_list=[]
+	var root=''
+	merkle_json=await filesyscontrol.getMerkleTree(userAddr)
+	if(merkle_json !== null && merkle_json!= undefined && merkle_json!== '')
+	{
+		const userTree=StandardMerkleTree.StandardMerkleTree.load(JSON.parse(merkle_json))
+		for (const [i, v] of userTree.entries()) 
+		{
+			if(v==filename)
+			{
+				continue
+			}
+			fileName_list.push(v)	
+		}	
+	}
+	console.log(`[setUserMerkleData] Merkle tree is being built using  ${fileName_list}`)
+	if(fileName_list.length==0)
+	{
+		root=0x0
+		console.log("[setUserMerkleData] merkle root:",root)
+		await filesyscontrol.setMerkleTree(userAddr,'')
+		await updateUserHash(userAddr,root,identifier)
+		return
+
+
+	}
+	const tree=StandardMerkleTree.StandardMerkleTree.of(fileName_list,['string'])
+	
+	root=tree.root
+	console.log("[setUserMerkleData] merkle root:",root)
+	await filesyscontrol.setMerkleTree(userAddr,tree)
+	await updateUserHash(userAddr,root,identifier)
+
+};
+
 async function authenticate(addr, signatureObj){
 	var authenticated = false;
-	console.log(`[func] authenticate: Taking in params ${addr}, ${JSON.stringify(signatureObj)}`);
+	console.log(`[authenticate] authenticate: Taking in params ${addr}, ${JSON.stringify(signatureObj)}`);
 	var ret_addr = await contractAPI.methods.VerifyMessage(signatureObj["hashedMessage"], signatureObj["v"], signatureObj["r"], signatureObj["s"]).call();
 	// check if the user owns this account
-	console.log("This is the authentication. This message should appear BEFORE the addUser function!");
-	console.log(`Attempting authentication... ${addr} === ${ret_addr} ? ${parseInt(addr, 16)===parseInt(ret_addr, 16)}`);
+	console.log("[authenticate] This is the authentication. This message should appear BEFORE the addUser function!");
+	console.log(`[authenticate] Attempting authentication... ${addr} === ${ret_addr} ? ${parseInt(addr, 16)===parseInt(ret_addr, 16)}`);
 	if(parseInt(addr, 16)===parseInt(ret_addr, 16)){
 		authenticated = true;
 	}
-	console.log(authenticated);
-
+	console.log("[authenticate] ended: ",authenticated)
 	return authenticated;
 }
 
 // function to deal with 1. updating metadata, and 2. saving the actual file
 async function manage_upload(id, filename, filenamehash, filecontent){
-	console.log(`manage_upload called with parameters id ${id}, filename ${filename}, filecontent ${filecontent}`);
+	console.log(`[manage_upload] manage_upload called with parameters id ${id}, filename ${filename}, filecontent ${filecontent}`);
+	var uploadable = true;
 	var existing_file = await filesyscontrol.check_file_existence(id, filename);
 	if(existing_file===null){
 		// the file is new and so a new record needs to be inserted
-		console.log(`The file does not already exist, so we have to upload it as a new file!`);
+		console.log(`[manage_upload] The file does not already exist, so we have to upload it as a new file!`);
 		var replication_factor=2
-		var diskbucket = upload_new(id, filename,filenamehash,replication_factor,filecontent);
+		uploadable = await upload_new(id, filename,filenamehash,replication_factor,filecontent);
 		//fs.writeFileSync(diskpath+"/"+filename, filecontent);
 	} else {
 		// the file is already in the system, so only need to save the file
 
-		// WE NEED TO UPDATE THE METADATA TOO ACTUALLY! SINCE WE ADDED FILESIZE!
-		// added function upload_existing() below to handle
-		// I added one auxillary function to help :) It is called update_file_metadata()
-		// The existing_file variable above is actually the file, so you can modify the attributes directly
-		// (refer to filesyscontrol.js) after modifying the values, use update_file_metadata() to update metatree
-		await upload_existing(id,filename,filecontent);
+		uploadable = await upload_existing(id,filename,filecontent);
 
 		// existing_file is a file metadata object, which contains filename, diskpath, and collaborators etc.
-		console.log(`The file is not new, so we just need to save it again with no changes to metadata`);
-		var diskbucket = existing_file["diskbucket"];
+		console.log(`[manage_upload] The file is not new, so we just need to save it again with no changes to metadata`);
 		//fs.writeFileSync(diskpath+"/"+filename, filecontent);
 	}
-// store the actual file (may be inside if-statement if applicable)
-		// --> call the gc_upload file function here
-		// --> update the blockchain?
-		// TODO
-		/* DON'T FORGET TO MIRROR THESE ACTIONS ON THE OTHER BRANCH IN manage_upload()*/
+    console.log("[manage_upload] ended")
+	return uploadable;
 		
 }
 
 // This function handles the logic for downloading the file from buckets.
 // If user has access, it tries to download the file from the first bucket in the list, if that bucket is not available it will go to the next bucket until it finds the file.
-function manageDownload(userAddr, filename){
-
-	var fileBuckets= filesyscontrol.getFileBuckets(userAddr,filename)
-	
+async function manageDownload(userAddr, filename){
+	console.log("Inside manageDownload")
+	var fileBuckets=await filesyscontrol.getFileBuckets(userAddr,filename)
 	for(var i=0;i<fileBuckets.length;i++)
 	{
 		var bucket=fileBuckets[i]
@@ -128,12 +152,13 @@ function manageDownload(userAddr, filename){
 		var bucket_key=bucket['keyfile']
 		var bucket_project_id=bucket["project"]
 		var bucket_provider={
-  			projectId: 'bucket_project_id',
-  			keyFilename: 'bucket_key'
+  			projectId: bucket_project_id,
+  			keyFilename: bucket_key
 		};
 		if(googlebucket.gc_checkBucketStatus(bucket_name,bucket_provider))
 		{
-			data=googlebucket.gc_readFile(bucketName,userAddr,filename,bucket_provider)
+			data=await googlebucket.gc_readFile(bucket_name,userAddr,filename,bucket_provider)
+			console.log("Download data",data)
 			return data;
 		}
 		else
@@ -148,16 +173,24 @@ function manageDownload(userAddr, filename){
 // Verifies the user's access to download a file using merkle tree and root.
 async function authenticateFileAccess(userAddr,filename)
 {
-	var userRootMap;
-	var root=await getUserRootBC(userAddr)
+	var TEST_MODE=false
+	console.log("\n\n\n\n\n Insinde authenticateFileAccess, checking if in test:",TEST_MODE)
+	if(TEST_MODE)
+	{
+		return true;
+	}
+	var bc_root=await getUserRootBC(userAddr)
+	var root=web3.utils.numberToHex(bc_root['merkleHash'])
+	root = web3.utils.padLeft(root, 64);
 	console.log("Inside authenticateFileAccess, print root:",root)
-	var merkle_json=filesyscontrol.getMerkleTree(userAddr)
+	var merkle_json=await filesyscontrol.getMerkleTree(userAddr)
 	const userTree=StandardMerkleTree.StandardMerkleTree.load(JSON.parse(merkle_json))
 	for (const [i, v] of userTree.entries()) {
 		if(v[0]==filename)
 		{
 			const proof = userTree.getProof(i);
 			const isAuth=StandardMerkleTree.StandardMerkleTree.verify(root,['string'],[filename],proof)
+			console.log("isAuth and filename and v ", isAuth, filename,v)
 			return isAuth
 		}
 	}
@@ -167,8 +200,12 @@ async function authenticateFileAccess(userAddr,filename)
 
 		
 async function upload_existing(userAddr,filename,fileContent){
-        var fileBuckets= await filesyscontrol.getFileBuckets(userAddr,filename)
+	console.log("[upload_existing] started")
+	var uploadable = true;
+    var fileBuckets= await filesyscontrol.getFileBuckets(userAddr,filename)
 	console.log(fileBuckets)
+	var syncbuckets = [];
+	var ver=null
 	for(var i=0;i<fileBuckets.length;i++)
 	{
 		var bucket=fileBuckets[i];
@@ -182,25 +219,47 @@ async function upload_existing(userAddr,filename,fileContent){
 
 		try {
 			// don't want to append file, so delete the old one and replace.
-			googlebucket.gc_uploadFile(bucket_name,userAddr,filename,fileContent,bucket_provider);
+			console.log(`[upload_existing] attempting to upload a new file: id ${userAddr}, filename ${filename}`);
+			uploadable = await googlebucket.gc_uploadFile(bucket_name,userAddr,filename,fileContent,bucket_provider);
+			console.log("[upload_existing] ifUploaded the actual user file not the metadata: ", uploadable)
+			syncbuckets.push(bucket);
+			// change the version number since the file has been modified
+			var filemetadata = await filesyscontrol.check_file_existence(userAddr, filename);
+			filemetadata["version"] += 1;
+			ver=filemetadata["version"]
+			filemetadata["syncbuckets"] = syncbuckets;
+			console.log(`[upload_existing] after updating the metadata, we get ${JSON.stringify(filemetadata)}\n`);
+			await filesyscontrol.update_file_metadata(userAddr, filemetadata);
 		} catch (err) {
-			console.log(`Failed to replace existing file... Error reason:\n{err}`);
+			console.log(`[upload_existing] Failed to replace existing file... Error reason:\n ${err}`);
+			uploadable = false;
 		}
 
 	}
+	console.log(`[upload_existing] About to call version_updater to update gc buckets...`);
+	if(ver!=null)
+	{
+		await version_updater(userAddr, syncbuckets,filename, ver);
+
+	}
+	console.log("[upload_existing] ended")
+	return uploadable;
+
 }
 
 // note: we need to modify to include file ID. also edit filesyscontrol.create_file_entry()
-function upload_new(id, filename, filenamehash, replication_factor,filecontent) {
+async function upload_new(id, filename, filenamehash, replication_factor,filecontent) {
     // we now wish to store the file, we assume we are already authenticated.
     // two parts: first, generate disk. second, add the file to metatree.
-    console.log(`upload_new called, checking to update metadata...`);
+    var uploadable=true
+	console.log(`[upload_new] upload_new called, checking to update metadata...`);
     var diskbuckets = [];
+	var syncbuckets = [];
     if (fs.existsSync(filename_disklist)) {
         // we get a list of disks (buckets) available to us specified in disklist
         var disklist_file = fs.readFileSync(filename_disklist)
         var disklist = JSON.parse(disklist_file);
-        console.log(`Reading in disklist gives a result ${disklist} with length ${disklist.length}`);
+        console.log(`[upload_new] Reading in disklist gives a result ${disklist} with length ${disklist.length}`);
 
         // shuffle the disklist and pick the first n entries
         disklist = shuffleArray(disklist);
@@ -217,20 +276,34 @@ function upload_new(id, filename, filenamehash, replication_factor,filecontent) 
 				projectId: bucket_project_id,
 				keyFilename: bucket_key
 			};
-			googlebucket.gc_uploadFile(bucket_name,id,filename,filecontent,bucket_provider)
-            console.log(`The bucket is ${diskbucket["project"]}, ${diskbucket["bucket"]}, ${diskbucket["keyfile"]}`);
-            diskbuckets.push(diskbucket);
+			
+			try {
+				await googlebucket.gc_uploadFile(bucket_name,id,filename,filecontent,bucket_provider);
+				syncbuckets.push(diskbucket);
+			} catch (err) {
+				uploadable=false
+				console.log(`[upload_new] Failed to push to the bucket! $ {err}`);
+			}
+
         }
 
-        // update the metatree
-        console.log(`\nAbout to call filesyscontrol with arguments id ${id}, filename ${filename}, hash ${filenamehash}`);
-        filesyscontrol.create_file_entry(id, filename, filenamehash, diskbuckets);
-    } else {
-        console.log("This should not happen! Someone tampered with the environment and deleted it!");
-    }
+		for (var i=0; i< disklist.length; i++) {
+			var diskbucket = disklist[i];
+			diskbuckets.push(diskbucket);
+		}
 
-    console.log(`After processing, the disk path is ${diskbuckets}`);
-    return diskbuckets;
+
+        // update the metatree only if update is successful
+		console.log(`\n[upload_new] About to call filesyscontrol with arguments id ${id}, filename ${filename}, hash ${filenamehash}`);
+		await filesyscontrol.create_file_entry(id, filename, filenamehash, diskbuckets, syncbuckets);	
+		console.log(`[upload_new] About to call version_updater to update gc buckets...`);
+		await version_updater(id, syncbuckets,filename,0);
+    } else {
+        console.log("[upload_new] This should not happen! Someone tampered with the environment and deleted it!");
+		uploadable = false;
+    }
+	console.log("[upload_new] ended")
+    return uploadable;
 }
 
 
@@ -261,6 +334,7 @@ async function addUser(userAddr, merkleHash, hasFile, signatureObj) {
 	console.log(`These are the values being passed in: userAddr ${userAddr}, merkleHash ${merkleHash}, signatureObj ${JSON.stringify(signatureObj)}`);
 	const pendingTx = contractAPI.methods.addUser(userAddr, merkleHash, hasFile, signatureObj);
 	const resultTx = await sendTx(privKey, pendingTx);
+	console.log("Inside addUSer after the addUSer BC function call",resultTx)
 	return resultTx;
 }
 
@@ -288,10 +362,10 @@ async function getUserRootBC(userAddr)
 };
 
 // this is just a function i created for gupdating merkle root in my local this can be replaced.
-async function updateUserHash(userAddr, merkleHash) {
+async function updateUserHash(userAddr, merkleHash,signatureObj) {
 	// const userAddr = userAddr;
 	// const merkleHash = merkleHash;
-	const pendingTx = contractAPI.methods.updateHash(userAddr, merkleHash);
+	const pendingTx = contractAPI.methods.updateHash(userAddr, merkleHash,signatureObj);
 	console.log("Inside updateMerkleHash:",merkleHash);
 	const gasCost = await web3.eth.estimateGas({
 		"value": 0x0,
@@ -303,47 +377,90 @@ async function updateUserHash(userAddr, merkleHash) {
 	return resultTx;
 }
 
-// function for updating metadata across all google cloud nodes
-async function synchronize_metadata(WHAT, DO, I, ADD, HERE){
-	// get the user from the metatree
-	console.log(`[synchronize_metadata] Running procedure to update metadata across all buckets`);
-	var user_central = await filesyscontrol.retrieve_user_record();
-	console.log(`[synchronize_metadata] Sending ${JSON.stringify(user_central["files"])} for processing`);
-	var ubuckets = await filesyscontrol.get_bucket_union(user_central["files"]);
-	console.log(`[synchronize_metadata] Retrieved buckets--> ${JSON.stringify(user_diskbuckets)}`);
-	var bucket_count = ubuckets.length;
-	var user_updated = user_central;
-	for(let i=0; i<bucket_count; i++){
-		// we will now go through each bucket and get the metadata file
-		var gc_readFile(bucketName, id, fileName, bucket_provider)
-		var gc_metadatafile = await gc_readFile(ubuckets[i], id, `__metadata-${id}__.json`, WHAT_DO_I_PUT_HERE);
-		if(gc_metadatafile!==null) {
-			var gc_user = JSON.stringify(gc_metadatafile);
-			console.log(`[synchronize_metadata] The user retrieved from bucket ${ubuckets[i]} is ${gc_user}`);
-			// we want to get the latest version of the file... this includes the case 
-			// where central node loses the metatree.json file and needs help rebuilding
-			if(gc_user["updated"] > user_updated["updated"]){
-				gc_updated = gc_user;
-			}
+
+async function updateHasFile(userAddr, hasFile,signatureObj) {
+	// const userAddr = userAddr;
+	// const merkleHash = merkleHash;
+	const pendingTx = contractAPI.methods.changeHaveFileStatus(userAddr, hasFile,signatureObj);
+	console.log("Inside updateMerkleHash:",merkleHash);
+	const gasCost = await web3.eth.estimateGas({
+		"value": 0x0,
+		"data": pendingTx.encodeABI(),
+		"from": ownerAddr,
+		"to": contractAddr
+	});
+	const resultTx = await sendTx(privKey, pendingTx);
+	return resultTx;
+}
+
+// function to update the version count
+async function version_updater(id, buckets, filename, ver){
+    // after user inserts a file (whether new or edit), we want to reflect these changes to the buckets
+    // filestructure defined in providers.py,
+    // datastruct = {"project", "bucket", "files []"}
+    console.log(`[version_updater] Attempting to update the metadata file in each bucket`);
+    for (const bucket of buckets) {
+        // retrieve the file from each bucket
+		console.log(`[version_updater] whats inside bucket`,bucket);
+		var bucket_name=bucket['bucket']
+		var bucket_key=bucket['keyfile']
+		var bucket_project_id=bucket["project"]
+		var bucket_provider={
+			  projectId: bucket_project_id,
+			  keyFilename: bucket_key
+		};        
+		metadatafile = await googlebucket.gc_readMetaFile(bucket_name, "__metadata-users__.json", bucket_provider)
+        var bucketfilename = id+"-"+filename;
+		var jsonMetadata=JSON.parse(metadatafile)
+        console.log(`[version_updater] Checking for filename ${jsonMetadata} in the gc metadata file...`);
+
+        jsonMetadata["files"][bucketfilename]= ver
+        // attempt to write back to the cloud
+        await googlebucket.gc_uploadMetaFile(bucket_name, "__metadata-users__.json", JSON.stringify(jsonMetadata), bucket_provider)
+    }
+};
+
+async function version_deleter(id, buckets, filename){
+	console.log(`[version_deleter] Attempting to remove the metadata entry from each file in buckets `, buckets);
+	for (const bucket of buckets) {
+		const bucketMetaFile='__metadata-users__.json'
+		var bucket_name=bucket['bucket']
+		    var bucket_key=bucket['keyfile']
+		    var bucket_project_id=bucket["project"]
+		    var bucket_provider={
+  			    projectId: bucket_project_id,
+  		    	keyFilename: bucket_key
+		    };
+		// I believe we got new syntax, so we need to update this
+		var metaContent = await googlebucket.gc_readMetaFile(bucket_name, bucketMetaFile, bucket_provider);
+		metaContent=JSON.parse(metaContent)
+		var bucketfilename = id+"-"+filename;
+		console.log(`[version_deleter] Attempting to remove it now...`)
+		try {
+			delete metaContent['files'][bucketfilename];
+			console.log("[version_deleter], checking if file was deleted or not ",JSON.stringify(metaContent))
+			await googlebucket.gc_uploadMetaFile(bucket_name, bucketMetaFile, JSON.stringify(metaContent),bucket_provider)
+			await googlebucket.gc_deleteFile(bucket_name, id, filename, bucket_provider)
+
+		} catch (err) {
+			console.log(`[version_deleter] WARNING: Could not delete the entry! Reason below:\n${err}`);
 		}
 	}
 
-	// we can now push this file across all nodes
-	for(let i=0; i<bucket_count; i++){
-		// push updates of gc_updated to buckets
-		console.log(`[synchronize_metadata] pushing to bucket...`);
-	}
-	
 }
+
 
 // export all the functions.
 module.exports = {"insert_user":insert_user,
 				  "authenticate":authenticate,
 				  "manage_upload":manage_upload,
+				  "manageDownload":manageDownload,
 				  "setUserMerkleData":setUserMerkleData,
 				  "addUser": addUser,
 				  "getUser": getUser,
 				  "removeUser": removeUser,
 				  "getUserRootBC": getUserRootBC,
-				  "authenticateFileAccess":authenticateFileAccess
+				  "authenticateFileAccess":authenticateFileAccess,
+				  "version_deleter":version_deleter,
+				  "updateMerkleAfterDelete":updateMerkleAfterDelete
 				};
