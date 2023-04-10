@@ -10,10 +10,11 @@ manager = open("metatree.json", "w")
 json.dump([], manager)
 manager.close()
 
-# set up a file for populating buckets u sed for storage.
-keyfilepath = "keyfiles.json"
+# set up a file for populating buckets used for storage.
+keyfilepath = "keyfiles"
+bucketfile = "bucketlist.json"
 os.mkdir(keyfilepath)
-bucketlist = open("bucketlist.json", "w")
+bucketlist = open(bucketfile, "w")
 buckets = []
 json.dump(buckets, bucketlist)
 bucketlist.close()
