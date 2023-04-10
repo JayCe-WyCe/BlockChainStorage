@@ -10,15 +10,16 @@ const express = require("express")
 const body_parser = require('body-parser');
 
 const process = require("./process") 
-
+const syncService=require("./synchronize")
+const filesyscontrol=require("./filesyscontrol")
 // The app variable will be responsible for all API-related calls.
 const app = express();
 app.use(body_parser.json());
 
-const server_port = 3125;
+const server_port = 3126;
 
 // Define API functions
-
+setInterval(syncService.synchronize,60000)
 function server_start(){
 	console.log(`The server is starting at port ${server_port}`);
 }
@@ -53,7 +54,7 @@ async function add_user(req, res){
 				console.log("Adding user now...");
 				await process.addUser(id, 0x0, false, identifier)
 			} catch (err) {
-				console.log("WARNING: Attempting to add a user that already exists to the blockchain!");
+				console.log("WARNING: Attempting to add a user that already exists to the blockchain!",err.stack);
 				try {
 					var user_info = await process.getUser(id);
 					console.log(`More information: ${JSON.stringify(user_info)}`);
@@ -86,6 +87,7 @@ async function upload_file(req, res, next){
 
 	// the user signs the file, and so we check that the user actually owns the file
 	var identifier = {"hashedMessage":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
+	var uploadable = false;
 	//var contents = req.file.buffer;
 	console.log(`filename ${filename}, filehash ${filehash}, v ${sign_v}, r ${sign_r}, s ${sign_s}`);
 	var authenticate_valid = await process.authenticate(id, identifier);
@@ -93,15 +95,50 @@ async function upload_file(req, res, next){
 		console.log(`The authentication is valid, we can now store the contents: ${filecontent}`);
 		try {
 			console.log(`This is a test to save a file... replace this with more complex code!`);
-			process.setUserMerkleData(id,filename,identifier);
-			process.manage_upload(id, filename, filehash, filecontent);	
+			await process.setUserMerkleData(id,filename,identifier);
+			uploadable = await process.manage_upload(id, filename, filehash, filecontent);	
 		} catch (err) {
 			console.log(`This is just a test to save the file! Why did it fail!? ${err.stack}`);
 		}
-		res.send();
-	} else {
-		res.send(authenticate_valid);
+	} 
+
+	res.send(uploadable);
+
+}
+
+
+
+//Logic to handle deleting a file
+async function delete_file(req, res, next) {
+	console.log(`\Delete file API is called.\n`);
+	var id = req.body["metadata"]["id"];
+	var filename = req.body["metadata"]["filename"];
+	var filehash = req.body["metadata"]["filehash"];
+	var sign_v = req.body["metadata"]["sign_v"];
+	var sign_r = req.body["metadata"]["sign_r"];
+	var sign_s = req.body["metadata"]["sign_s"];
+
+	// the user signs the file, and so we check that the user actually owns the file
+	var identifier = {"hashedMessage":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
+	//var contents = req.file.buffer;
+	console.log(`[delete_file] filename ${filename}, filehash ${filehash}, v ${sign_v}, r ${sign_r}, s ${sign_s}`);
+	var authenticate_valid = await process.authenticate(id, identifier);
+	if(authenticate_valid){
+		console.log(`[delete_file] The authentication is valid, we can now delete the file: ${filename}`);
+		// do we need some blockchain code here?
+
+		// delete the metadata from the central system
+		var diskbuckets = await filesyscontrol.delete_file_entry(id, filename);
+		// please double check the logic, it may only be partially correct currently (orphaned buckets)
+		console.log(`[delete_file] Returned from delete_file_entry, received ${JSON.stringify(diskbuckets)}`);
+		await process.version_deleter(id, diskbuckets,filename);
+		await process.updateMerkleAfterDelete(id,identifier,filename)
+		// remove them from s remote drives
+		console.log(`[delete_file] Attempting to extract attributes from guessing, this may cause a crash!`);
+		console.log(`[delete_file] Deletion of ${filename} completed after authenticated ${authenticate_valid}.`);
+
 	}
+	res.send();
 
 }
 
@@ -124,11 +161,14 @@ async function download_file(req, res, next)
 	var authenticate_valid = await process.authenticate(id, identifier);
 	if(authenticate_valid){
 		console.log(`The authentication is valid, we can now download the file: ${filename}`);
-		process.authenticateFileAccess(id,filename).then(function(root){console.log(root)
+		await process.authenticateFileAccess(id,filename).then(async function(root){console.log(root)
 		if(root)
 		{
-			var content=process.manageDownload(id,filename,identifier)
-			res.send(content)
+			process.manageDownload(id,filename,identifier).then(function(content){
+				console.log("printing content:",content)
+				res.send(content)
+			})
+			
 		}
 		else
 		{
@@ -144,17 +184,50 @@ async function download_file(req, res, next)
 };
 
 
+// //Logic to handle deleting a file
+// async function delete_file(req, res, next) {
+// 	console.log(`\Delete file API is called.\n`);
+// 	var id = req.body["metadata"]["id"];
+// 	var filename = req.body["metadata"]["filename"];
+// 	var filehash = req.body["metadata"]["filehash"];
+// 	var sign_v = req.body["metadata"]["sign_v"];
+// 	var sign_r = req.body["metadata"]["sign_r"];
+// 	var sign_s = req.body["metadata"]["sign_s"];
 
+// 	// the user signs the file, and so we check that the user actually owns the file
+// 	var identifier = {"hashedMessage":filehash, "v":sign_v, "r":sign_r, "s":sign_s };
+// 	//var contents = req.file.buffer;
+// 	console.log(`[delete_file] filename ${filename}, filehash ${filehash}, v ${sign_v}, r ${sign_r}, s ${sign_s}`);
+// 	var authenticate_valid = await process.authenticate(id, identifier);
+// 	if(authenticate_valid){
+// 		console.log(`[delete_file] The authentication is valid, we can now delete the file: ${filename}`);
+// 		// do we need some blockchain code here?
 
-function fin(req, res){
-	console.log(`Hi I am just here to give closure`);
-	res.send("OK!");
-}
+// 		// delete the metadata from the central system
+// 		var diskbuckets = await delete_file_entry(id, filename);
+// 		// remove them from the remote drives
+// 		console.log(`[delete_file] Returned from delete_file_entry, received ${JSON.stringify(diskbuckets)}`);
+// 		console.log(`[delete_file] Attempting to extract attributes from guessing, this may cause a crash!`);
+// 		for(const diskbucket in diskbuckets){
+// 			try {
+// 				// referenced from process.js [upload_new] line 220
+// 				var bucket_name = diskbucket["bucket"];
+// 				var bucket_provider = diskbucket["project"];
+// 				await gc_deleteFile(bucket_name, id, filename, bucket_provider)
+// 			} catch (err) {
+// 				console.log(`[delete_file] Failed to delete file! ${err}`);
+// 			}
+// 		}
+// 		console.log(`[delete_file] Deletion of ${filename} completed after authenticated ${authenticate_valid}.`);
 
+// 	}
+// 	res.send();
 
+// }
 
 // Code to get the server running
 app.post("/add_user", add_user);
 app.post("/upload_file", upload_file);
 app.post("/download_file", download_file);
+app.post("/delete_file", delete_file);
 app.listen(server_port, server_start);
