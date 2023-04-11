@@ -13,6 +13,37 @@ def set_connection(ip, port):
     global url_path
     url_path = f"http://{ip}:{port}/"
 
+def delete_file(user_id, prikey, filename):
+    url = url_path + "delete_file"
+    signpackage = sign_message(int.from_bytes(filename.encode(), 'big'), prikey)
+    filehash = signpackage[0]
+    sign_v, sign_r, sign_s = signpackage[1]
+
+    # pad the hex values
+    user_id_hex = "0x" + (40-len(hex(user_id)[2:]))*"0" + hex(user_id)[2:]
+    filehash_hex = filehash.hex()
+    v_hex = "0x" + (2-len(hex(sign_v)[2:]))*"0" + hex(sign_v)[2:]
+    r_hex = "0x" + (64-len(hex(sign_r)[2:]))*"0" + hex(sign_r)[2:]
+    s_hex = "0x" + (64-len(hex(sign_s)[2:]))*"0" + hex(sign_s)[2:]
+
+    print(f"DEBUG: Trying to access URL {url}")
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "metadata": {
+            "id": user_id_hex,
+            "filename": filename,
+            "filehash": filehash_hex,
+            "sign_v": v_hex,
+            "sign_r": r_hex,
+            "sign_s": s_hex
+        }
+    }
+
+    payload = json.dumps(data)
+    print(f"Sending the the payload:\n{payload}\n")
+    res = requests.post(url, headers=headers, data=payload)
+    return res
+
 def download_file(user_id, prikey, filename):
     url = url_path + "download_file"
     signpackage = sign_message(int.from_bytes(filename.encode(), 'big'), prikey)
