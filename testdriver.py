@@ -2,7 +2,7 @@ from bridge import *
 import sys
 
 # To run a test:
-# python testdriver.py [1|2|3] [|filename|file] [|filename|]
+# python testdriver.py [1|2|3|4] [none|filename|filename|filename] [none|file|none|none]
 
 argv = sys.argv
 
@@ -31,7 +31,11 @@ def test_download_file(filename):
     res = download_file(pub_addr_id, prikey, filename)
     print(f"[download file] Functionality returns {res}")
 
-funcmap = {"1":test_add_user, "2":test_upload_file, "3":test_download_file}
+def test_delete_file(filename):
+    res = delete_file(pub_addr_id, prikey, filename)
+    print(f"[delete file] Functionality returns {res}")
+
+funcmap = {"1":test_add_user, "2":test_upload_file, "3":test_download_file, "4":test_delete_file}
 try:
     if(argv[1]=="1"):
         funcmap["1"]()
@@ -39,6 +43,8 @@ try:
         funcmap["2"](argv[2], argv[3])
     elif(argv[1]=="3"):
         funcmap["3"](argv[2])
+    elif(argv[1]=="4"):
+        funcmap["4"](argv[2])
 
 except Exception as err:
     print(f"Something goofed!\n>>>\n{err}\n<<<\n")

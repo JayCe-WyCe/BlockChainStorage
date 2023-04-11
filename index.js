@@ -16,7 +16,7 @@ const filesyscontrol=require("./filesyscontrol")
 const app = express();
 app.use(body_parser.json());
 
-const server_port = 3126;
+const server_port = 3125;
 
 // Define API functions
 setInterval(syncService.synchronize,60000)
